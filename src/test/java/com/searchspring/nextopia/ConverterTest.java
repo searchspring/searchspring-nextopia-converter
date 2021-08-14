@@ -6,9 +6,13 @@ import org.junit.Test;
 
 public class ConverterTest {
     @Test
-    public void ConvertTest() {
+    public void ConvertSearchspringResponseTest() {
         Converter converter = new Converter();
-
-        assertEquals("<xml>", converter.convert("{}"));
+        assertEquals("<xml>", converter.convertSearchspringResponse("{}"));
+    }
+    @Test
+    public void ConvertNextopiaQueryTest() {
+        Converter converter = new Converter();
+        assertEquals("newUrl", converter.convertNextopiaQueryUrl("http://blah"));
     }
 }
