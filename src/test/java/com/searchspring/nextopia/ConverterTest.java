@@ -25,7 +25,7 @@ public class ConverterTest {
     @Test
     public void ConvertSearchspringResponsePaginationTest() {
         String ssJson = "{\"pagination\": {\"totalResults\": 1981}}";
-        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><xml><pagination> q<total_products>1981</total_products></pagination><results></results></xml>";
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><xml><pagination><total_products>1981</total_products></pagination><results></results></xml>";
         assertEquals(expected, converter.convertSearchspringResponse(ssJson));
     }
 
