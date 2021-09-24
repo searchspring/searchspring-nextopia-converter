@@ -74,7 +74,7 @@ public class Converter {
         Map<String, String> queryMap = parser.parseQueryString(uri.getQuery());
         StringBuilder sb = createSearchspringUrl();
         mapParameter(sb, queryMap, NX_KEYWORDS, SS_KEYWORDS);
-        logger.debug("Converted {} to {}", nextopiaQueryUrl, sb.toString());
+        logger.debug("Converted {} to {}", nextopiaQueryUrl, sb);
         return sb.toString();
     }
 
