@@ -1,11 +1,12 @@
 package com.searchspring.nextopia;
 
+import static com.searchspring.nextopia.model.ParameterMappings.NX_KEYWORDS;
+import static com.searchspring.nextopia.model.ParameterMappings.SS_KEYWORDS;
+import static com.searchspring.nextopia.model.ParameterMappings.SS_SITE_ID;
+
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.google.gson.Gson;
@@ -13,7 +14,7 @@ import com.google.gson.internal.LinkedTreeMap;
 import com.searchspring.nextopia.model.SearchspringResponse;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.CompactWriter;
-import static com.searchspring.nextopia.model.ParameterMappings.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +25,7 @@ public class Converter {
     private final String SS_PATH = "/api";
 
     private final String siteId;
+    private final UrlParameterParser parser = new UrlParameterParser();
     private final Gson GSON = new Gson();
     private final XStream xs = new XStream();
 
@@ -69,7 +71,7 @@ public class Converter {
 
     public String convertNextopiaQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
         URI uri = new URI(nextopiaQueryUrl);
-        Map<String, String> queryMap = parseQueryString(uri.getQuery());
+        Map<String, String> queryMap = parser.parseQueryString(uri.getQuery());
         StringBuilder sb = createSearchspringUrl();
         mapParameter(sb, queryMap, NX_KEYWORDS, SS_KEYWORDS);
         logger.debug("Converted {} to {}", nextopiaQueryUrl, sb.toString());
@@ -87,22 +89,6 @@ public class Converter {
             sb.append("&");
             sb.append(destinationParameter).append("=").append(queryMap.get(sourceParameter));
         }
-    }
-
-    private Map<String, String> parseQueryString(String query) {
-        Map<String, String> queryMap = new LinkedHashMap<String, String>();
-        String[] pairs = query.split("&");
-        for (String pair : pairs) {
-            int idx = pair.indexOf("=");
-            try {
-                queryMap.put(URLDecoder.decode(pair.substring(0, idx), "UTF-8"),
-                        URLDecoder.decode(pair.substring(idx + 1), "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                // Should never happen.
-                logger.error("Missing utf-8 encoding", e);
-            }
-        }
-        return queryMap;
     }
 
 }
