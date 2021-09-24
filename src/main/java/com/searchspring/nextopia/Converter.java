@@ -10,16 +10,18 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
-import com.searchspring.nextopia.model.ParameterMappings;
 import com.searchspring.nextopia.model.SearchspringResponse;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.CompactWriter;
-
+import static com.searchspring.nextopia.model.ParameterMappings.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Converter {
     final Logger logger = LoggerFactory.getLogger(Converter.class);
+    private final String SS_DOMAIN = ".a.searchspring.io";
+
+    private final String SS_PATH = "/api";
 
     private final String siteId;
     private final Gson GSON = new Gson();
@@ -68,10 +70,15 @@ public class Converter {
     public String convertNextopiaQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
         URI uri = new URI(nextopiaQueryUrl);
         Map<String, String> queryMap = parseQueryString(uri.getQuery());
-        StringBuilder sb = new StringBuilder("http://").append(siteId).append(".a.searchspring.io/api?siteId=").append(siteId);
-        mapParameter(sb, queryMap, ParameterMappings.NX_KEYWORDS, ParameterMappings.SS_KEYWORDS);
+        StringBuilder sb = createSearchspringUrl();
+        mapParameter(sb, queryMap, NX_KEYWORDS, SS_KEYWORDS);
         logger.debug("Converted {} to {}", nextopiaQueryUrl, sb.toString());
         return sb.toString();
+    }
+
+    private StringBuilder createSearchspringUrl() {
+        return new StringBuilder("https://").append(siteId).append(SS_DOMAIN).append(SS_PATH).append("?")
+                .append(SS_SITE_ID).append("=").append(siteId);
     }
 
     private void mapParameter(StringBuilder sb, Map<String, String> queryMap, String sourceParameter,
