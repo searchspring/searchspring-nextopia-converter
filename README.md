@@ -10,7 +10,8 @@ Takes a Nextopia query and turns it into a searchspring query.
 ```java
 import com.searchspring.nextopia.Converter;
 // ...
-Converter converter = new Converter();
+String siteId = "abcd12";
+Converter converter = new Converter(siteId);
 String nextopiaXml = converter.convertSearchspringResponse(searchspringJson);
 ```
 
@@ -19,6 +20,7 @@ String nextopiaXml = converter.convertSearchspringResponse(searchspringJson);
 ```java
 import com.searchspring.nextopia.Converter;
 // ...
-Converter converter = new Converter();
+String siteId = "abcd12";
+Converter converter = new Converter(siteId);
 String searchspringQueryUrl = converter.convertNextopiaQueryUrl(nextopiaQuery);
 ```
