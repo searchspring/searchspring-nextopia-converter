@@ -46,6 +46,7 @@ public class ParameterMappings {
     public final static String NX_RELATED_SEARCHES = "related_searches";
     public final static String NX_JSON = "json";
         
+    public final static String NX_LANDING_PAGE = "nxt_landing_page";
 
     public final static Set<String> ALL_NEXTOPIA_PARAMETERS = new HashSet<>();
 
