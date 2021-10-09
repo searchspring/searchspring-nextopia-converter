@@ -84,19 +84,22 @@ public class Converter {
         return sb.toString();
     }
 
-
     private void mapRefinements(StringBuilder sb, Map<String, String> queryMap) {
         Map<String, String> leftOverParameters = getLeftOverParameters(queryMap);
         Set<String> keySet = leftOverParameters.keySet();
         for (String key : keySet) {
             String value = leftOverParameters.get(key);
-            try {
-                sb.append("&").append("filter.").append(key).append("=").append(
-                    URLEncoder.encode(value, "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                logger.warn("Couldn't encode parameter {}, {}", value, e);
-            }
+            sb.append("&").append("filter.").append(key).append("=").append(mustEncode(value));
         }
+    }
+
+    private String mustEncode(String value) {
+        try {
+            return URLEncoder.encode(value, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            logger.warn("Couldn't encode parameter {}, {}", value, e);
+        }
+        return "";
     }
 
     private Map<String, String> getLeftOverParameters(Map<String, String> queryMap) {
@@ -120,7 +123,8 @@ public class Converter {
             String destinationParameter) {
         if (queryMap.containsKey(sourceParameter)) {
             sb.append("&");
-            sb.append(destinationParameter).append("=").append(queryMap.get(sourceParameter));
+            String value = queryMap.get(sourceParameter);
+            sb.append(destinationParameter).append("=").append(mustEncode(value));
         }
     }
 

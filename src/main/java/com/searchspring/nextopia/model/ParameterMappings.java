@@ -1,7 +1,6 @@
 package com.searchspring.nextopia.model;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
