@@ -1,13 +1,18 @@
 package com.searchspring.nextopia;
 
+import static com.searchspring.nextopia.model.ParameterMappings.ALL_NEXTOPIA_PARAMETERS;
 import static com.searchspring.nextopia.model.ParameterMappings.NX_KEYWORDS;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_KEYWORDS;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_SITE_ID;
 
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
@@ -74,8 +79,36 @@ public class Converter {
         Map<String, String> queryMap = parser.parseQueryString(uri.getQuery());
         StringBuilder sb = createSearchspringUrl();
         mapParameter(sb, queryMap, NX_KEYWORDS, SS_KEYWORDS);
+        mapRefinements(sb, queryMap);
         logger.debug("Converted {} to {}", nextopiaQueryUrl, sb);
         return sb.toString();
+    }
+
+
+    private void mapRefinements(StringBuilder sb, Map<String, String> queryMap) {
+        Map<String, String> leftOverParameters = getLeftOverParameters(queryMap);
+        Set<String> keySet = leftOverParameters.keySet();
+        for (String key : keySet) {
+            String value = leftOverParameters.get(key);
+            try {
+                sb.append("&").append("filter.").append(key).append("=").append(
+                    URLEncoder.encode(value, "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                logger.warn("Couldn't encode parameter {}, {}", value, e);
+            }
+        }
+    }
+
+    private Map<String, String> getLeftOverParameters(Map<String, String> queryMap) {
+        Map<String, String> leftOverParameters = new TreeMap<>();
+        Set<String> keySet = queryMap.keySet();
+        for (String key : keySet) {
+            if (!ALL_NEXTOPIA_PARAMETERS.contains(key)) {
+                leftOverParameters.put(key, queryMap.get(key));
+            }
+        }
+        System.out.println(leftOverParameters);
+        return leftOverParameters;
     }
 
     private StringBuilder createSearchspringUrl() {
