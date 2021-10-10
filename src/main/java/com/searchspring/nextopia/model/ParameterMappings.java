@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class ParameterMappings {
-    public final static String SS_KEYWORDS = "query";
+    public final static String SS_KEYWORDS = "q";
     public final static String SS_SITE_ID = "siteId";
 
     public final static String NX_KEYWORDS = "keywords";
