@@ -10,9 +10,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
@@ -76,7 +77,7 @@ public class Converter {
 
     public String convertNextopiaQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
         URI uri = new URI(nextopiaQueryUrl);
-        Map<String, String> queryMap = parser.parseQueryString(uri.getQuery());
+        Map<String, List<String>> queryMap = parser.parseQueryString(uri.getQuery());
         StringBuilder sb = createSearchspringUrl();
         mapParameter(sb, queryMap, NX_KEYWORDS, SS_KEYWORDS);
         mapRefinements(sb, queryMap);
@@ -84,12 +85,14 @@ public class Converter {
         return sb.toString();
     }
 
-    private void mapRefinements(StringBuilder sb, Map<String, String> queryMap) {
-        Map<String, String> leftOverParameters = getLeftOverParameters(queryMap);
+    private void mapRefinements(StringBuilder sb, Map<String, List<String>> queryMap) {
+        Map<String, List<String>> leftOverParameters = getLeftOverParameters(queryMap);
         Set<String> keySet = leftOverParameters.keySet();
         for (String key : keySet) {
-            String value = leftOverParameters.get(key);
-            sb.append("&").append("filter.").append(key).append("=").append(mustEncode(value));
+            List<String> values = leftOverParameters.get(key);
+            for (String value : values) {
+                sb.append("&").append("filter.").append(key).append("=").append(mustEncode(value));
+            }
         }
     }
 
@@ -102,15 +105,14 @@ public class Converter {
         return "";
     }
 
-    private Map<String, String> getLeftOverParameters(Map<String, String> queryMap) {
-        Map<String, String> leftOverParameters = new TreeMap<>();
+    private Map<String, List<String>> getLeftOverParameters(Map<String, List<String>> queryMap) {
+        Map<String, List<String>> leftOverParameters = new LinkedHashMap<>();
         Set<String> keySet = queryMap.keySet();
         for (String key : keySet) {
             if (!ALL_NEXTOPIA_PARAMETERS.contains(key)) {
                 leftOverParameters.put(key, queryMap.get(key));
             }
         }
-        System.out.println(leftOverParameters);
         return leftOverParameters;
     }
 
@@ -119,12 +121,13 @@ public class Converter {
                 .append(SS_SITE_ID).append("=").append(siteId);
     }
 
-    private void mapParameter(StringBuilder sb, Map<String, String> queryMap, String sourceParameter,
+    private void mapParameter(StringBuilder sb, Map<String, List<String>> queryMap, String sourceParameter,
             String destinationParameter) {
         if (queryMap.containsKey(sourceParameter)) {
-            sb.append("&");
-            String value = queryMap.get(sourceParameter);
-            sb.append(destinationParameter).append("=").append(mustEncode(value));
+            List<String> values = queryMap.get(sourceParameter);
+            for (String value : values) {
+                sb.append("&").append(destinationParameter).append("=").append(mustEncode(value));
+            }
         }
     }
 

@@ -17,8 +17,10 @@ import org.xmlunit.diff.ElementSelectors;
 
 public class ConverterTest {
 
+    private static final String TEST_URL_PREFIX = "https://api.nextopiasoftware.com/return-results.php?xml=1&client_id=66141eeeacafe959b288238d65b176cb";
     private Converter converter = null;
     private final static String SITE_ID = "abcd12";
+    private static final String EXPECTED_URL_PREFIX = "https://abcd12.a.searchspring.io/api?siteId=" + SITE_ID;
 
     @Before
     public void setup() {
@@ -48,27 +50,44 @@ public class ConverterTest {
 
     @Test
     public void ConvertQueryKeywordTest() throws URISyntaxException {
-        assertEquals("https://abcd12.a.searchspring.io/api?siteId=" + SITE_ID + "&" + SS_KEYWORDS + "=b%C3%B6b",
+        assertEquals(EXPECTED_URL_PREFIX + "&" + SS_KEYWORDS + "=b%C3%B6b",
                 converter.convertNextopiaQueryUrl(
-                        "https://ecommerce-search.nextopiasoftware.com/return-results.php?keywords=böb&page=1&json=1&client_id=b9d7aa2736f88c2a410dde6f66b946b5&ip=50.92.124.92&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F93.0.4577.82+Safari%2F537.36"));
+                        "https://ecommerce-search.nextopiasoftware.com/return-results.php?keywords=böb"));
     }
 
     @Test
     public void ConvertQueryRefineTest() throws URISyntaxException {
         assertEquals(
-                "https://abcd12.a.searchspring.io/api?siteId=" + SITE_ID + "&" + SS_KEYWORDS
+                EXPECTED_URL_PREFIX + "&" + SS_KEYWORDS
                         + "=world+fork&filter.Flatwaretypeid7741124012283339335=Dinner+Fork",
                 converter.convertNextopiaQueryUrl(
-                        "https://api.nextopiasoftware.com/return-results.php?xml=1&client_id=66141eeeacafe959b288238d65b176cb&keywords=world+fork&refine=y&return_single_refines=1:1&Flatwaretypeid7741124012283339335=Dinner+Fork&refines_mode=keep:Flatwaretypeid7741124012283339335&ip=10.3.62.24&page=1&res_per_page=20&searchtype=0&requested_fields=Sku"));
+                        TEST_URL_PREFIX + "&keywords=world+fork&Flatwaretypeid7741124012283339335=Dinner+Fork"));
     }
 
     @Test
     public void ConvertQueryRefineOrTest() throws URISyntaxException {
         // TODO
+        // https://api.nextopiasoftware.com/return-results.php?xml=1&client_id=083b5e2abbfa7278bb3c4821178e0d9b&keywords=Brush&refine=y&return_single_refines=1:1&ip=10.3.62.25&page=2&res_per_page=20&searchtype=0&Catalogidlist=3074457345616677067-PLG4.00^3074457345616676730-PLG4.00&requested_fields=Sku
     }
 
     @Test
     public void ConvertQueryRefineAndTest() throws URISyntaxException {
-        // TODO
+        assertEquals(
+                EXPECTED_URL_PREFIX 
+                + "&" + SS_KEYWORDS + "=world+fork"
+                        + "&filter.Flatwaretypeid7741124012283339335=Spoon"
+                        + "&filter.Flatwaretypeid7741124012283339335=Dinner+Fork",
+                converter.convertNextopiaQueryUrl(
+                        TEST_URL_PREFIX + "&keywords=world+fork&Flatwaretypeid7741124012283339335=Spoon&Flatwaretypeid7741124012283339335=Dinner+Fork"));
+    }
+
+    @Test
+    public void ConvertQueryRefineAndEnsureOrderTest() throws URISyntaxException {
+        assertEquals(
+                EXPECTED_URL_PREFIX + "&" + SS_KEYWORDS + "=world+fork"
+                        + "&filter.Flatwaretypeid7741124012283339335=Dinner+Fork"
+                        + "&filter.Flatwaretypeid7741124012283339335=Spoon",
+                converter.convertNextopiaQueryUrl(
+                        TEST_URL_PREFIX + "&keywords=world+fork&Flatwaretypeid7741124012283339335=Dinner+Fork&Flatwaretypeid7741124012283339335=Spoon"));
     }
 }
