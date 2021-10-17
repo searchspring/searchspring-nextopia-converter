@@ -1,13 +1,19 @@
 package com.searchspring.nextopia;
 
+import static com.searchspring.nextopia.model.ParameterMappings.ALL_NEXTOPIA_PARAMETERS;
 import static com.searchspring.nextopia.model.ParameterMappings.NX_KEYWORDS;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_KEYWORDS;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_SITE_ID;
 
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
@@ -71,11 +77,43 @@ public class Converter {
 
     public String convertNextopiaQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
         URI uri = new URI(nextopiaQueryUrl);
-        Map<String, String> queryMap = parser.parseQueryString(uri.getQuery());
+        Map<String, List<String>> queryMap = parser.parseQueryString(uri.getQuery());
         StringBuilder sb = createSearchspringUrl();
         mapParameter(sb, queryMap, NX_KEYWORDS, SS_KEYWORDS);
+        mapRefinements(sb, queryMap);
         logger.debug("Converted {} to {}", nextopiaQueryUrl, sb);
         return sb.toString();
+    }
+
+    private void mapRefinements(StringBuilder sb, Map<String, List<String>> queryMap) {
+        Map<String, List<String>> leftOverParameters = getLeftOverParameters(queryMap);
+        Set<String> keySet = leftOverParameters.keySet();
+        for (String key : keySet) {
+            List<String> values = leftOverParameters.get(key);
+            for (String value : values) {
+                sb.append("&").append("filter.").append(key).append("=").append(encodeOrBlank(value));
+            }
+        }
+    }
+
+    private String encodeOrBlank(String value) {
+        try {
+            return URLEncoder.encode(value, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            logger.warn("Couldn't encode parameter {}, {}", value, e);
+        }
+        return "";
+    }
+
+    private Map<String, List<String>> getLeftOverParameters(Map<String, List<String>> queryMap) {
+        Map<String, List<String>> leftOverParameters = new LinkedHashMap<>();
+        Set<String> keySet = queryMap.keySet();
+        for (String key : keySet) {
+            if (!ALL_NEXTOPIA_PARAMETERS.contains(key)) {
+                leftOverParameters.put(key, queryMap.get(key));
+            }
+        }
+        return leftOverParameters;
     }
 
     private StringBuilder createSearchspringUrl() {
@@ -83,11 +121,13 @@ public class Converter {
                 .append(SS_SITE_ID).append("=").append(siteId);
     }
 
-    private void mapParameter(StringBuilder sb, Map<String, String> queryMap, String sourceParameter,
+    private void mapParameter(StringBuilder sb, Map<String, List<String>> queryMap, String sourceParameter,
             String destinationParameter) {
         if (queryMap.containsKey(sourceParameter)) {
-            sb.append("&");
-            sb.append(destinationParameter).append("=").append(queryMap.get(sourceParameter));
+            List<String> values = queryMap.get(sourceParameter);
+            for (String value : values) {
+                sb.append("&").append(destinationParameter).append("=").append(encodeOrBlank(value));
+            }
         }
     }
 

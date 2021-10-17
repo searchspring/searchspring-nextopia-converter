@@ -24,3 +24,10 @@ String siteId = "abcd12";
 Converter converter = new Converter(siteId);
 String searchspringQueryUrl = converter.convertNextopiaQueryUrl(nextopiaQuery);
 ```
+
+## Notes and Caveats
+
+### OR queries
+
+A salient difference between Searchspring and Nextopia is that OR queries are configured via 
+the API in Nextopia but through the merchandising console in Searchspring.
