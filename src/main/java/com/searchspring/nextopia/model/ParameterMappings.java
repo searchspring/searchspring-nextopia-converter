@@ -7,6 +7,7 @@ import java.util.Set;
 public class ParameterMappings {
     public final static String SS_KEYWORDS = "q";
     public final static String SS_PAGE = "page";
+    
     public final static String SS_RES_PER_PAGE = "resultsPerPage";
     
     public final static String SS_SITE_ID = "siteId";
