@@ -91,7 +91,10 @@ public class Converter {
         for (String key : keySet) {
             List<String> values = leftOverParameters.get(key);
             for (String value : values) {
-                sb.append("&").append("filter.").append(key).append("=").append(encodeOrBlank(value));
+                String[] ors = value.split("\\^");
+                for (String or : ors) {
+                    sb.append("&").append("filter.").append(key).append("=").append(encodeOrBlank(or));
+                }
             }
         }
     }
