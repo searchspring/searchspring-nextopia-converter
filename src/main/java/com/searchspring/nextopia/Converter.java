@@ -91,12 +91,12 @@ public class Converter {
         for (String key : keySet) {
             List<String> values = leftOverParameters.get(key);
             for (String value : values) {
-                sb.append("&").append("filter.").append(key).append("=").append(mustEncode(value));
+                sb.append("&").append("filter.").append(key).append("=").append(encodeOrBlank(value));
             }
         }
     }
 
-    private String mustEncode(String value) {
+    private String encodeOrBlank(String value) {
         try {
             return URLEncoder.encode(value, "UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -126,7 +126,7 @@ public class Converter {
         if (queryMap.containsKey(sourceParameter)) {
             List<String> values = queryMap.get(sourceParameter);
             for (String value : values) {
-                sb.append("&").append(destinationParameter).append("=").append(mustEncode(value));
+                sb.append("&").append(destinationParameter).append("=").append(encodeOrBlank(value));
             }
         }
     }
