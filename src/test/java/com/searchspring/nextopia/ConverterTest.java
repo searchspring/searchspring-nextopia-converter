@@ -65,8 +65,11 @@ public class ConverterTest {
 
         @Test
         public void ConvertQueryRefineOrTest() throws URISyntaxException {
-                // TODO
-                // https://api.nextopiasoftware.com/return-results.php?xml=1&client_id=083b5e2abbfa7278bb3c4821178e0d9b&keywords=Brush&refine=y&return_single_refines=1:1&ip=10.3.62.25&page=2&res_per_page=20&searchtype=0&Catalogidlist=3074457345616677067-PLG4.00^3074457345616676730-PLG4.00&requested_fields=Sku
+                assertEquals(EXPECTED_URL_PREFIX + "&" + SS_KEYWORDS + "=Brush"
+                                + "&filter.Catalogidlist=3074457345616677067-PLG4.00"
+                                + "&filter.Catalogidlist=3074457345616676730-PLG4.00",
+                                converter.convertNextopiaQueryUrl(TEST_URL_PREFIX + "&keywords=Brush"
+                                                + "&Catalogidlist=3074457345616677067-PLG4.00%5E3074457345616676730-PLG4.00"));
         }
 
         @Test
