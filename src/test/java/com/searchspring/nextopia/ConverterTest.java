@@ -91,4 +91,11 @@ public class ConverterTest {
                                                 + "&Flatwaretypeid7741124012283339335=Dinner+Fork"
                                                 + "&Flatwaretypeid7741124012283339335=Spoon"));
         }
+
+        @Test
+        public void PaginationTest() throws URISyntaxException {
+                assertEquals(EXPECTED_URL_PREFIX + "&" + SS_PAGE +"=2" 
+                + "&" + SS_RES_PER_PAGE + "=32",
+                                converter.convertNextopiaQueryUrl(TEST_URL_PREFIX + "&page=2" + "&res_per_page=32"));
+        }
 }

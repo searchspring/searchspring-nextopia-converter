@@ -2,7 +2,11 @@ package com.searchspring.nextopia;
 
 import static com.searchspring.nextopia.model.ParameterMappings.ALL_NEXTOPIA_PARAMETERS;
 import static com.searchspring.nextopia.model.ParameterMappings.NX_KEYWORDS;
+import static com.searchspring.nextopia.model.ParameterMappings.NX_PAGE;
+import static com.searchspring.nextopia.model.ParameterMappings.NX_RES_PER_PAGE;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_KEYWORDS;
+import static com.searchspring.nextopia.model.ParameterMappings.SS_PAGE;
+import static com.searchspring.nextopia.model.ParameterMappings.SS_RES_PER_PAGE;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_SITE_ID;
 
 import java.io.StringWriter;
@@ -80,6 +84,8 @@ public class Converter {
         Map<String, List<String>> queryMap = parser.parseQueryString(uri.getQuery());
         StringBuilder sb = createSearchspringUrl();
         mapParameter(sb, queryMap, NX_KEYWORDS, SS_KEYWORDS);
+        mapParameter(sb, queryMap, NX_PAGE, SS_PAGE);
+        mapParameter(sb, queryMap, NX_RES_PER_PAGE, SS_RES_PER_PAGE);
         mapRefinements(sb, queryMap);
         logger.debug("Converted {} to {}", nextopiaQueryUrl, sb);
         return sb.toString();

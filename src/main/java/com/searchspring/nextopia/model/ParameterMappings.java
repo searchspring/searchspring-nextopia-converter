@@ -6,6 +6,9 @@ import java.util.Set;
 
 public class ParameterMappings {
     public final static String SS_KEYWORDS = "q";
+    public final static String SS_PAGE = "page";
+    public final static String SS_RES_PER_PAGE = "resultsPerPage";
+    
     public final static String SS_SITE_ID = "siteId";
 
     public final static String NX_KEYWORDS = "keywords";
@@ -15,7 +18,7 @@ public class ParameterMappings {
     public final static String NX_REFINE = "refine";
     public final static String NX_REFINES_MODE = "refines_mode";
     public final static String NX_REQUESTED_FIELDS = "requested_fields";
-    public final static String NX_RECS_PER_PAGE = "res_per_page";
+    public final static String NX_RES_PER_PAGE = "res_per_page";
     public final static String NX_RETURN_SINGLE_REFINES = "return_single_refines";
     public final static String NX_SEARCHTYPE = "searchtype";
     public final static String NX_XML = "xml";
