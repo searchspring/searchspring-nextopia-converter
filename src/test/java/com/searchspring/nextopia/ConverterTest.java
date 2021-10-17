@@ -94,8 +94,19 @@ public class ConverterTest {
 
         @Test
         public void PaginationTest() throws URISyntaxException {
-                assertEquals(EXPECTED_URL_PREFIX + "&" + SS_PAGE +"=2" 
-                + "&" + SS_RES_PER_PAGE + "=32",
+                assertEquals(EXPECTED_URL_PREFIX + "&" + SS_PAGE + "=2" + "&" + SS_RES_PER_PAGE + "=32",
                                 converter.convertNextopiaQueryUrl(TEST_URL_PREFIX + "&page=2" + "&res_per_page=32"));
+        }
+
+        @Test
+        public void SortTest() throws URISyntaxException {
+                assertEquals(EXPECTED_URL_PREFIX + "&sort.Price=asc",
+                                converter.convertNextopiaQueryUrl(TEST_URL_PREFIX + "&sort_by_field=Price:ASC"));
+                assertEquals(EXPECTED_URL_PREFIX + "&sort.Price=desc",
+                                converter.convertNextopiaQueryUrl(TEST_URL_PREFIX + "&sort_by_field=Price:DESC"));
+                assertEquals(EXPECTED_URL_PREFIX,
+                                converter.convertNextopiaQueryUrl(TEST_URL_PREFIX + "&sort_by_field=Price:"));
+                assertEquals(EXPECTED_URL_PREFIX,
+                                converter.convertNextopiaQueryUrl(TEST_URL_PREFIX + "&sort_by_field=Price"));
         }
 }

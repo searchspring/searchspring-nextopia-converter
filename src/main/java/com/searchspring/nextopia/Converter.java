@@ -4,6 +4,7 @@ import static com.searchspring.nextopia.model.ParameterMappings.ALL_NEXTOPIA_PAR
 import static com.searchspring.nextopia.model.ParameterMappings.NX_KEYWORDS;
 import static com.searchspring.nextopia.model.ParameterMappings.NX_PAGE;
 import static com.searchspring.nextopia.model.ParameterMappings.NX_RES_PER_PAGE;
+import static com.searchspring.nextopia.model.ParameterMappings.NX_SORT_BY_FIELD;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_KEYWORDS;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_PAGE;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_RES_PER_PAGE;
@@ -87,8 +88,21 @@ public class Converter {
         mapParameter(sb, queryMap, NX_PAGE, SS_PAGE);
         mapParameter(sb, queryMap, NX_RES_PER_PAGE, SS_RES_PER_PAGE);
         mapRefinements(sb, queryMap);
+        mapSort(sb, queryMap);
         logger.debug("Converted {} to {}", nextopiaQueryUrl, sb);
         return sb.toString();
+    }
+
+    private void mapSort(StringBuilder sb, Map<String, List<String>> queryMap) {
+        List<String> sortValues  = queryMap.get(NX_SORT_BY_FIELD);
+        if (sortValues != null) {
+            for (String sort : sortValues) {
+                String[] fieldDirection = sort.split(":");
+                if (fieldDirection.length == 2) {
+                    sb.append("&").append("sort.").append(fieldDirection[0]).append("=").append(fieldDirection[1].toLowerCase());
+                }
+            }
+        }
     }
 
     private void mapRefinements(StringBuilder sb, Map<String, List<String>> queryMap) {
