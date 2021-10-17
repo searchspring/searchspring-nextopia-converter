@@ -1,7 +1,10 @@
 package com.searchspring.nextopia;
 
+import static com.searchspring.nextopia.model.ParameterMappings.SS_KEYWORDS;
+import static com.searchspring.nextopia.model.ParameterMappings.SS_PAGE;
+import static com.searchspring.nextopia.model.ParameterMappings.SS_RES_PER_PAGE;
 import static org.junit.Assert.assertEquals;
-import static com.searchspring.nextopia.model.ParameterMappings.*;
+
 import java.net.URISyntaxException;
 
 import javax.xml.transform.Source;
@@ -28,14 +31,14 @@ public class ConverterTest {
         }
 
         @Test
-        public void ConvertSearchspringResponsePaginationTest() {
+        public void convertSearchspringResponsePaginationTest() {
                 String ssJson = "{\"pagination\": {\"totalResults\": 1981}}";
                 String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><xml><pagination><total_products>1981</total_products></pagination><results></results></xml>";
                 assertEquals(expected, converter.convertSearchspringResponse(ssJson));
         }
 
         @Test
-        public void ConvertSearchspringResponseResultsTest() {
+        public void convertSearchspringResponseResultsTest() {
                 String ssJson = "{\"pagination\": {\"totalResults\": 1981}, \"results\": [ { \"brand\": \"Adidas\" } ]}";
                 String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><xml><pagination><total_products>1981</total_products></pagination>"
                                 + "<results><result><rank>0</rank><brand>Adidas</brand></result></results>" //
@@ -50,13 +53,13 @@ public class ConverterTest {
         }
 
         @Test
-        public void ConvertQueryKeywordTest() throws URISyntaxException {
+        public void convertQueryKeywordTest() throws URISyntaxException {
                 assertEquals(EXPECTED_URL_PREFIX + "&" + SS_KEYWORDS + "=b%C3%B6b", converter.convertNextopiaQueryUrl(
                                 "https://ecommerce-search.nextopiasoftware.com/return-results.php?keywords=böb"));
         }
 
         @Test
-        public void ConvertQueryRefineTest() throws URISyntaxException {
+        public void convertQueryRefineTest() throws URISyntaxException {
                 assertEquals(EXPECTED_URL_PREFIX + "&" + SS_KEYWORDS + "=world+fork"
                                 + "&filter.Flatwaretypeid7741124012283339335=Dinner+Fork",
                                 converter.convertNextopiaQueryUrl(TEST_URL_PREFIX + "&keywords=world+fork"
@@ -64,7 +67,7 @@ public class ConverterTest {
         }
 
         @Test
-        public void ConvertQueryRefineOrTest() throws URISyntaxException {
+        public void convertQueryRefineOrTest() throws URISyntaxException {
                 assertEquals(EXPECTED_URL_PREFIX + "&" + SS_KEYWORDS + "=Brush"
                                 + "&filter.Catalogidlist=3074457345616677067-PLG4.00"
                                 + "&filter.Catalogidlist=3074457345616676730-PLG4.00",
@@ -73,7 +76,7 @@ public class ConverterTest {
         }
 
         @Test
-        public void ConvertQueryRefineAndTest() throws URISyntaxException {
+        public void convertQueryRefineAndTest() throws URISyntaxException {
                 assertEquals(EXPECTED_URL_PREFIX + "&" + SS_KEYWORDS + "=world+fork"
                                 + "&filter.Flatwaretypeid7741124012283339335=Spoon"
                                 + "&filter.Flatwaretypeid7741124012283339335=Dinner+Fork",
@@ -83,7 +86,7 @@ public class ConverterTest {
         }
 
         @Test
-        public void ConvertQueryRefineAndEnsureOrderTest() throws URISyntaxException {
+        public void convertQueryRefineAndEnsureOrderTest() throws URISyntaxException {
                 assertEquals(EXPECTED_URL_PREFIX + "&" + SS_KEYWORDS + "=world+fork"
                                 + "&filter.Flatwaretypeid7741124012283339335=Dinner+Fork"
                                 + "&filter.Flatwaretypeid7741124012283339335=Spoon",
@@ -93,13 +96,13 @@ public class ConverterTest {
         }
 
         @Test
-        public void PaginationTest() throws URISyntaxException {
+        public void paginationTest() throws URISyntaxException {
                 assertEquals(EXPECTED_URL_PREFIX + "&" + SS_PAGE + "=2" + "&" + SS_RES_PER_PAGE + "=32",
                                 converter.convertNextopiaQueryUrl(TEST_URL_PREFIX + "&page=2" + "&res_per_page=32"));
         }
 
         @Test
-        public void SortTest() throws URISyntaxException {
+        public void sortTest() throws URISyntaxException {
                 assertEquals(EXPECTED_URL_PREFIX + "&sort.Price=asc",
                                 converter.convertNextopiaQueryUrl(TEST_URL_PREFIX + "&sort_by_field=Price:ASC"));
                 assertEquals(EXPECTED_URL_PREFIX + "&sort.Price=desc",
