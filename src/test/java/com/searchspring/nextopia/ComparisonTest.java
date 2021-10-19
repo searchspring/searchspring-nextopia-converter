@@ -75,15 +75,11 @@ public class ComparisonTest {
     private void compareXml(String nextopiaUrl, String searchspringUrl) throws Exception {
         String nextopiaXml = readStringFromURL(nextopiaUrl);
         String searchspringJson = readStringFromURL(searchspringUrl);
-        System.out.println(nextopiaXml);
-        System.out.println(searchspringJson);
         String searchspringXml = converter.convertSearchspringResponse(searchspringJson);
-        System.out.println(searchspringXml);
         assertEquals(prettyPrint(nextopiaXml), prettyPrint(searchspringXml));
     }
 
     public static String readStringFromURL(String requestURL) throws Exception {
-        System.out.println("executing: " + requestURL);
         try (Scanner scanner = new Scanner(new URL(requestURL).openStream(), StandardCharsets.UTF_8.toString())) {
             scanner.useDelimiter("\\A");
             return scanner.hasNext() ? scanner.next() : "";
@@ -98,7 +94,6 @@ public class ComparisonTest {
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-        // initialize StreamResult with File object to save to file
         StreamResult result = new StreamResult(new StringWriter());
         DOMSource source = new DOMSource(doc);
         transformer.transform(source, result);
