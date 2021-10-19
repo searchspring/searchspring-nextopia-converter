@@ -46,12 +46,26 @@ public class Converter {
             return EMPTY_RESPONSE;
         }
         SearchspringResponse response = GSON.fromJson(searchspringResponse, SearchspringResponse.class);
-        StringBuilder sb = new StringBuilder("<?xml version='1.0' encoding='UTF-8'?><xml><pagination><total_products>"
-                + getTotalResults(response) + "</total_products></pagination>");
+        StringBuilder sb = new StringBuilder("<?xml version='1.0' encoding='UTF-8'?><xml>");
+
+        appendPagination(sb, response);
         appendRefinements(sb, response);
         appendResults(sb, response);
         sb.append("</xml>");
         return sb.toString();
+    }
+
+    private void appendPagination(StringBuilder sb, SearchspringResponse response) {
+        sb.append("<pagination>");
+        sb.append("<total_products>").append(response.pagination.totalResults).append("</total_products>");
+        sb.append("<product_min>").append(response.pagination.begin).append("</product_min>");
+        sb.append("<product_max>").append(response.pagination.end).append("</product_max>");
+        sb.append("<current_page>").append(response.pagination.currentPage).append("</current_page>");
+        sb.append("<total_pages>").append(response.pagination.totalPages).append("</total_pages>");
+        sb.append("<prev_page>").append(response.pagination.currentPage > 1 ? "1" : "0").append("</prev_page>");
+        sb.append("<next_page>").append(response.pagination.currentPage < response.pagination.totalPages ? "1" : "0")
+                .append("</next_page>");
+        sb.append("</pagination>");
     }
 
     private void appendRefinements(StringBuilder sb, SearchspringResponse response) {
@@ -86,7 +100,7 @@ public class Converter {
             return "";
         }
         try {
-            int result = (int)Double.parseDouble(object.toString());
+            int result = (int) Double.parseDouble(object.toString());
             return String.valueOf(result);
         } catch (Exception e) {
             return "";
@@ -108,13 +122,6 @@ public class Converter {
             }
         }
         sb.append("</results>");
-    }
-
-    private String getTotalResults(SearchspringResponse response) {
-        if (response.pagination != null) {
-            return String.valueOf(response.pagination.totalResults);
-        }
-        return "0";
     }
 
     public String convertNextopiaQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
