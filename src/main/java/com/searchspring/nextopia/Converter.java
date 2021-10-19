@@ -7,10 +7,10 @@ import static com.searchspring.nextopia.model.ParameterMappings.NX_RES_PER_PAGE;
 import static com.searchspring.nextopia.model.ParameterMappings.NX_SORT_BY_FIELD;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_KEYWORDS;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_PAGE;
+import static com.searchspring.nextopia.model.ParameterMappings.SS_RESULTS_FORMAT;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_RES_PER_PAGE;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_SITE_ID;
 
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,10 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.google.gson.Gson;
-import com.google.gson.internal.LinkedTreeMap;
 import com.searchspring.nextopia.model.SearchspringResponse;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.CompactWriter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,40 +30,42 @@ public class Converter {
     final Logger logger = LoggerFactory.getLogger(Converter.class);
     private final String SS_DOMAIN = ".a.searchspring.io";
 
-    private final String SS_PATH = "/api";
+    private final String SS_PATH = "/api/search/search.json";
 
     private final String siteId;
     private final UrlParameterParser parser = new UrlParameterParser();
     private final Gson GSON = new Gson();
-    private final XStream xs = new XStream();
+    private final static String EMPTY_RESPONSE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><xml><pagination><total_products>0</total_products></pagination></xml>";
 
     public Converter(String siteId) {
         this.siteId = siteId;
-        xs.registerConverter(new MapEntryConverter());
-        xs.alias("result", LinkedTreeMap.class);
     }
 
     public String convertSearchspringResponse(String searchspringResponse) {
+        if (searchspringResponse.contains("\"results\":\"")) {
+            return EMPTY_RESPONSE;
+        }
         SearchspringResponse response = GSON.fromJson(searchspringResponse, SearchspringResponse.class);
         StringBuilder sb = new StringBuilder(
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?><xml><pagination><total_products>"
+                "<?xml version='1.0' encoding='UTF-8'?><xml><pagination><total_products>"
                         + getTotalResults(response) + "</total_products></pagination>");
-
+        // TODO append refinements
         appendResults(sb, response);
         sb.append("</xml>");
         return sb.toString();
     }
 
     private void appendResults(StringBuilder sb, SearchspringResponse response) {
-        StringWriter sw = new StringWriter();
-        CompactWriter cw = new CompactWriter(sw);
         sb.append("<results>");
         if (response.results != null && response.results.length > 0) {
             int counter = 0;
             for (Map<String, Object> result : response.results) {
-                result.put("rank", String.valueOf(counter));
-                xs.marshal(result, cw);
-                sb.append(sw.toString());
+                // TODO replace with XML builder to avoid stringification issues
+                sb.append("<result>");
+                sb.append("<rank>").append(String.valueOf(counter)).append("</rank>");
+                sb.append("<Sku>").append("<![CDATA[").append(result.get("uid")).append("]]>").append("</Sku>");
+                sb.append("<results_flags><![CDATA[attributized]]></results_flags>");
+                sb.append("</result>");
                 counter++;
             }
         }
@@ -81,6 +80,7 @@ public class Converter {
     }
 
     public String convertNextopiaQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
+        nextopiaQueryUrl = nextopiaQueryUrl.replaceAll("\\^", "%5E");
         URI uri = new URI(nextopiaQueryUrl);
         Map<String, List<String>> queryMap = parser.parseQueryString(uri.getQuery());
         StringBuilder sb = createSearchspringUrl();
@@ -94,12 +94,13 @@ public class Converter {
     }
 
     private void mapSort(StringBuilder sb, Map<String, List<String>> queryMap) {
-        List<String> sortValues  = queryMap.get(NX_SORT_BY_FIELD);
+        List<String> sortValues = queryMap.get(NX_SORT_BY_FIELD);
         if (sortValues != null) {
             for (String sort : sortValues) {
                 String[] fieldDirection = sort.split(":");
                 if (fieldDirection.length == 2) {
-                    sb.append("&").append("sort.").append(fieldDirection[0]).append("=").append(fieldDirection[1].toLowerCase());
+                    sb.append("&").append("sort.").append(fieldDirection[0]).append("=")
+                            .append(fieldDirection[1].toLowerCase());
                 }
             }
         }
@@ -141,7 +142,7 @@ public class Converter {
 
     private StringBuilder createSearchspringUrl() {
         return new StringBuilder("https://").append(siteId).append(SS_DOMAIN).append(SS_PATH).append("?")
-                .append(SS_SITE_ID).append("=").append(siteId);
+                .append(SS_SITE_ID).append("=").append(siteId).append("&").append(SS_RESULTS_FORMAT).append("=json");
     }
 
     private void mapParameter(StringBuilder sb, Map<String, List<String>> queryMap, String sourceParameter,

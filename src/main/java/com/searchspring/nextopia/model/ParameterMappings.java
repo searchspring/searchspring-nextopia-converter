@@ -11,6 +11,7 @@ public class ParameterMappings {
     public final static String SS_RES_PER_PAGE = "resultsPerPage";
     
     public final static String SS_SITE_ID = "siteId";
+    public final static String SS_RESULTS_FORMAT = "resultsFormat";
 
     public final static String NX_KEYWORDS = "keywords";
     public final static String NX_CLIENT_ID = "client_id";
