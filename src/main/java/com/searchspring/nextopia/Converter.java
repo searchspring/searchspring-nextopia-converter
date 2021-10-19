@@ -46,13 +46,51 @@ public class Converter {
             return EMPTY_RESPONSE;
         }
         SearchspringResponse response = GSON.fromJson(searchspringResponse, SearchspringResponse.class);
-        StringBuilder sb = new StringBuilder(
-                "<?xml version='1.0' encoding='UTF-8'?><xml><pagination><total_products>"
-                        + getTotalResults(response) + "</total_products></pagination>");
-        // TODO append refinements
+        StringBuilder sb = new StringBuilder("<?xml version='1.0' encoding='UTF-8'?><xml><pagination><total_products>"
+                + getTotalResults(response) + "</total_products></pagination>");
+        appendRefinements(sb, response);
         appendResults(sb, response);
         sb.append("</xml>");
         return sb.toString();
+    }
+
+    private void appendRefinements(StringBuilder sb, SearchspringResponse response) {
+        sb.append("<refinables>");
+
+        if (response.results != null && response.facets.length > 0) {
+
+            for (Map<String, Object> facet : response.facets) {
+                // // TODO replace with XML builder to avoid stringification issues
+                sb.append("<refinable>");
+                sb.append("<name>").append("<![CDATA[").append(String.valueOf(facet.get("field"))).append("]]>")
+                        .append("</name>");
+                sb.append("<values>");
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> values = (List<Map<String, Object>>) facet.get("values");
+                for (Map<String, Object> value : values) {
+                    sb.append("<value>");
+                    sb.append("<name>").append("<![CDATA[").append(value.get("value")).append("]]>").append("</name>");
+                    sb.append("<num>").append("<![CDATA[").append(doubleToInteger(value.get("count"))).append("]]>")
+                            .append("</num>");
+                    sb.append("</value>");
+                }
+                sb.append("</values>");
+                sb.append("</refinable>");
+            }
+        }
+        sb.append("</refinables>");
+    }
+
+    private String doubleToInteger(Object object) {
+        if (object == null || object.toString().trim().equals("")) {
+            return "";
+        }
+        try {
+            int result = (int)Double.parseDouble(object.toString());
+            return String.valueOf(result);
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private void appendResults(StringBuilder sb, SearchspringResponse response) {
