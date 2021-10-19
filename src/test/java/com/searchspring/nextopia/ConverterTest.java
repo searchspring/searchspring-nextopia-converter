@@ -37,7 +37,9 @@ public class ConverterTest {
         @Test
         public void convertSearchspringResponsePaginationTest() {
                 String ssJson = "{\"pagination\": {\"totalResults\": 1981}}";
-                String expected = "<?xml version='1.0' encoding='UTF-8'?><xml><pagination><total_products>1981</total_products></pagination><refinables></refinables><results></results></xml>";
+                String expected = "<?xml version='1.0' encoding='UTF-8'?><xml>"
+                                + "<pagination><total_products>1981</total_products><product_min>0</product_min><product_max>0</product_max><current_page>0</current_page><total_pages>0</total_pages><prev_page>0</prev_page><next_page>0</next_page></pagination>"
+                                + "<refinables></refinables><results></results></xml>";
                 assertEquals(expected, converter.convertSearchspringResponse(ssJson));
         }
 
@@ -48,7 +50,8 @@ public class ConverterTest {
                                 + "\"facets\": [{\"field\":\"pattern_id7741124012283333869\", \"label\": \"Pattern\",\"type\": null,\"collapse\": 0,\"facet_active\": 0,"
                                 + "\"values\": [{\"active\": false,\"type\": \"value\",\"value\": \"Baguette\",\"label\": \"Baguette\",\"count\": 21}]"
                                 + "}]" + "}";
-                String expected = "<?xml version='1.0' encoding='UTF-8'?><xml><pagination><total_products>1981</total_products></pagination>"
+                String expected = "<?xml version='1.0' encoding='UTF-8'?><xml>"
+                                + "<pagination><total_products>1981</total_products><product_min>0</product_min><product_max>0</product_max><current_page>0</current_page><total_pages>0</total_pages><prev_page>0</prev_page><next_page>0</next_page></pagination>"
                                 + "<refinables><refinable><name><![CDATA[pattern_id7741124012283333869]]></name><values><value><name><![CDATA[Baguette]]></name><num><![CDATA[21]]></num></value></values></refinable></refinables>"
                                 + "<results>" //
                                 + "<result><rank>0</rank><Sku><![CDATA[1234]]></Sku><results_flags><![CDATA[attributized]]></results_flags></result>" //
