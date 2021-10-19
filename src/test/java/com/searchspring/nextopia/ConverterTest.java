@@ -5,6 +5,9 @@ import static com.searchspring.nextopia.model.ParameterMappings.SS_PAGE;
 import static com.searchspring.nextopia.model.ParameterMappings.SS_RES_PER_PAGE;
 import static org.junit.Assert.assertEquals;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 
 import javax.xml.transform.Source;
@@ -23,7 +26,8 @@ public class ConverterTest {
         private static final String TEST_URL_PREFIX = "https://api.nextopiasoftware.com/return-results.php?xml=1&client_id=66141eeeacafe959b288238d65b176cb";
         private Converter converter = null;
         private final static String SITE_ID = "abcd12";
-        private static final String EXPECTED_URL_PREFIX = "https://abcd12.a.searchspring.io/api?siteId=" + SITE_ID;
+        private static final String EXPECTED_URL_PREFIX = "https://abcd12.a.searchspring.io/api/search/search.json?siteId="
+                        + SITE_ID + "&resultsFormat=json";
 
         @Before
         public void setup() {
@@ -33,23 +37,40 @@ public class ConverterTest {
         @Test
         public void convertSearchspringResponsePaginationTest() {
                 String ssJson = "{\"pagination\": {\"totalResults\": 1981}}";
-                String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><xml><pagination><total_products>1981</total_products></pagination><results></results></xml>";
+                String expected = "<?xml version='1.0' encoding='UTF-8'?><xml><pagination><total_products>1981</total_products></pagination><results></results></xml>";
                 assertEquals(expected, converter.convertSearchspringResponse(ssJson));
         }
 
         @Test
         public void convertSearchspringResponseResultsTest() {
-                String ssJson = "{\"pagination\": {\"totalResults\": 1981}, \"results\": [ { \"brand\": \"Adidas\" } ]}";
-                String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><xml><pagination><total_products>1981</total_products></pagination>"
-                                + "<results><result><rank>0</rank><brand>Adidas</brand></result></results>" //
+                String ssJson = "{\"pagination\": {\"totalResults\": 1981}, \"results\": [ { \"uid\":\"1234\",\"brand\": \"Adidas\" } ]}";
+                String expected = "<?xml version='1.0' encoding='UTF-8'?><xml><pagination><total_products>1981</total_products></pagination>"
+                                + "<results>" //
+                                + "<result><rank>0</rank><Sku><![CDATA[1234]]></Sku><results_flags><![CDATA[attributized]]></results_flags></result>" //
+                                + "</results>" //
                                 + "</xml>";
+                String converted = converter.convertSearchspringResponse(ssJson);
                 Source sourceExpected = Input.fromString(expected).build();
-                Source sourceConverted = Input.fromString(converter.convertSearchspringResponse(ssJson)).build();
+                Source sourceConverted = Input.fromString(converted).build();
                 Diff diff = DiffBuilder.compare(sourceExpected).withTest(sourceConverted).checkForSimilar()
                                 .withNodeMatcher(new DefaultNodeMatcher(ElementSelectors.byNameAndText,
                                                 ElementSelectors.byName))
                                 .build();
                 Assert.assertFalse(diff.toString(), diff.hasDifferences());
+        }
+
+        @Test
+        public void convertFailingTest() throws Exception {
+                String line = null;
+                InputStream is = this.getClass().getResourceAsStream("/tests.json");
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+                        while ((line = br.readLine()) != null) {
+                                converter.convertSearchspringResponse(line);
+                        }
+                } catch (Exception e) {
+                        System.out.println("Failed on json: " + line);
+                        throw e;
+                }
         }
 
         @Test
@@ -72,7 +93,7 @@ public class ConverterTest {
                                 + "&filter.Catalogidlist=3074457345616677067-PLG4.00"
                                 + "&filter.Catalogidlist=3074457345616676730-PLG4.00",
                                 converter.convertNextopiaQueryUrl(TEST_URL_PREFIX + "&keywords=Brush"
-                                                + "&Catalogidlist=3074457345616677067-PLG4.00%5E3074457345616676730-PLG4.00"));
+                                                + "&Catalogidlist=3074457345616677067-PLG4.00^3074457345616676730-PLG4.00"));
         }
 
         @Test
