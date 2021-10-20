@@ -47,12 +47,19 @@ public class Converter {
         }
         SearchspringResponse response = GSON.fromJson(searchspringResponse, SearchspringResponse.class);
         StringBuilder sb = new StringBuilder("<?xml version='1.0' encoding='UTF-8'?><xml>");
-
+        appendSuggestSpelling(sb, response);
         appendPagination(sb, response);
         appendRefinements(sb, response);
         appendResults(sb, response);
         sb.append("</xml>");
         return sb.toString();
+    }
+
+    private void appendSuggestSpelling(StringBuilder sb, SearchspringResponse response) {
+        if (response.didYouMean != null && response.didYouMean.query != null) {
+            sb.append("<suggested_spelling><![CDATA[").append(response.didYouMean.query)
+                    .append("]]></suggested_spelling>");
+        }
     }
 
     private void appendPagination(StringBuilder sb, SearchspringResponse response) {
