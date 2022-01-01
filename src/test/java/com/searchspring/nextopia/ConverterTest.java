@@ -28,6 +28,10 @@ public class ConverterTest {
         private final static String SITE_ID = "abcd12";
         private static final String EXPECTED_URL_PREFIX = "https://abcd12.a.searchspring.io/api/search/search.json?siteId="
                         + SITE_ID + "&resultsFormat=json";
+        private static final String PREFIX_EMPTY_BITS = "<query_time>0</query_time>";
+        private static final String PREFIX_EMPTY_BITS2 = "<custom_synonyms/>";
+        private static final String POSTFIX_EMPTY_BITS = "<searched_in_field/><user_search_depth/><currently_sorted_by/><sort_bys/><notices><related_added><![CDATA[ 0 ]]></related_added><sku_match><![CDATA[ 0 ]]></sku_match><or_switch><![CDATA[ 0 ]]></or_switch></notices><merchandizing/>";
+        private static final String POSTFIX_EMPTY_BITS2 = "<index_hash><![CDATA[ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ]]></index_hash><xml_feed_done>1</xml_feed_done><cl>0</cl>";
 
         @Before
         public void setup() {
@@ -35,11 +39,27 @@ public class ConverterTest {
         }
 
         @Test
+        public void emptyTest() throws Exception {
+                String expected = "<?xml version='1.0' encoding='UTF-8'?><xml><query_time>0</query_time><suggested_spelling><![CDATA[ ]]></suggested_spelling><custom_synonyms/><pagination>"
+                                + "<total_products>0</total_products></pagination><searched_in_field/><user_search_depth/><currently_sorted_by/><sort_bys/><notices><related_added><![CDATA[ 0 ]]></related_added>"
+                                + "<sku_match><![CDATA[ 0 ]]></sku_match><or_switch><![CDATA[ 0 ]]></or_switch></notices><merchandizing/><refinables/><results/>"
+                                + "<index_hash><![CDATA[ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ]]></index_hash><xml_feed_done>1</xml_feed_done><cl>0</cl></xml>";
+                assertEquals(expected, converter.convertSearchspringResponse(""));
+                assertEquals(expected, converter.convertSearchspringResponse(null));
+        }
+
+        @Test
         public void convertSearchspringResponsePaginationTest() {
                 String ssJson = "{\"pagination\": {\"totalResults\": 1981}}";
                 String expected = "<?xml version='1.0' encoding='UTF-8'?><xml>"
+                                + PREFIX_EMPTY_BITS
+                                + "<suggested_spelling><![CDATA[ ]]></suggested_spelling>"
+                                + PREFIX_EMPTY_BITS2
                                 + "<pagination><total_products>1981</total_products><product_min>0</product_min><product_max>0</product_max><current_page>0</current_page><total_pages>0</total_pages><prev_page>0</prev_page><next_page>0</next_page></pagination>"
-                                + "<refinables></refinables><results></results></xml>";
+                                + POSTFIX_EMPTY_BITS
+                                + "<refinables/><results/>"
+                                + POSTFIX_EMPTY_BITS2
+                                + "</xml>";
                 assertEquals(expected, converter.convertSearchspringResponse(ssJson));
         }
 
@@ -52,12 +72,16 @@ public class ConverterTest {
                                 + "\"values\": [{\"active\": false,\"type\": \"value\",\"value\": \"Baguette\",\"label\": \"Baguette\",\"count\": 21}]"
                                 + "}]" + "}";
                 String expected = "<?xml version='1.0' encoding='UTF-8'?><xml>"
+                                + PREFIX_EMPTY_BITS
                                 + "<suggested_spelling><![CDATA[span]]></suggested_spelling>"
+                                + PREFIX_EMPTY_BITS2
                                 + "<pagination><total_products>1981</total_products><product_min>0</product_min><product_max>0</product_max><current_page>0</current_page><total_pages>0</total_pages><prev_page>0</prev_page><next_page>0</next_page></pagination>"
+                                + POSTFIX_EMPTY_BITS
                                 + "<refinables><refinable><name><![CDATA[pattern_id7741124012283333869]]></name><values><value><name><![CDATA[Baguette]]></name><num><![CDATA[21]]></num></value></values></refinable></refinables>"
                                 + "<results>" //
                                 + "<result><rank>0</rank><Sku><![CDATA[1234]]></Sku><results_flags><![CDATA[attributized]]></results_flags></result>" //
                                 + "</results>" //
+                                + POSTFIX_EMPTY_BITS2
                                 + "</xml>";
                 String converted = converter.convertSearchspringResponse(ssJson);
                 Source sourceExpected = Input.fromString(expected).build();
