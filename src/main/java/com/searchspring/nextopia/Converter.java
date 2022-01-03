@@ -1,15 +1,6 @@
 package com.searchspring.nextopia;
 
-import static com.searchspring.nextopia.model.ParameterMappings.ALL_NEXTOPIA_PARAMETERS;
-import static com.searchspring.nextopia.model.ParameterMappings.NX_KEYWORDS;
-import static com.searchspring.nextopia.model.ParameterMappings.NX_PAGE;
-import static com.searchspring.nextopia.model.ParameterMappings.NX_RES_PER_PAGE;
-import static com.searchspring.nextopia.model.ParameterMappings.NX_SORT_BY_FIELD;
-import static com.searchspring.nextopia.model.ParameterMappings.SS_KEYWORDS;
-import static com.searchspring.nextopia.model.ParameterMappings.SS_PAGE;
-import static com.searchspring.nextopia.model.ParameterMappings.SS_RESULTS_FORMAT;
-import static com.searchspring.nextopia.model.ParameterMappings.SS_RES_PER_PAGE;
-import static com.searchspring.nextopia.model.ParameterMappings.SS_SITE_ID;
+import static com.searchspring.nextopia.model.ParameterMappings.*;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -30,7 +21,8 @@ public class Converter {
     final Logger logger = LoggerFactory.getLogger(Converter.class);
     private final String SS_DOMAIN = ".a.searchspring.io";
 
-    private final String SS_PATH = "/api/search/search.json";
+    private final String SS_SEARCH_PATH = "/api/search/search.json";
+    private final String SS_AUTOCOMPLETE_PATH = "/api/suggest/query";
 
     private final String siteId;
     private final UrlParameterParser parser = new UrlParameterParser();
@@ -40,7 +32,17 @@ public class Converter {
         this.siteId = siteId;
     }
 
-    public String convertSearchspringResponse(String searchspringResponse) {
+    public String convertNextopiaAutocompleteQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
+        nextopiaQueryUrl = nextopiaQueryUrl.replaceAll("\\^", "%5E");
+        URI uri = new URI(nextopiaQueryUrl);
+        Map<String, List<String>> queryMap = parser.parseQueryString(uri.getQuery());
+        StringBuilder sb = createSearchspringAutocompleteUrl();
+        mapParameter(sb, queryMap, NX_AUTOCOMPLETE_QUERY, SS_AUTOCOMPLETE_QUERY);
+        logger.debug("Converted {} to {}", nextopiaQueryUrl, sb);
+        return sb.toString();
+    }
+
+    public String convertSearchspringSearchResponse(String searchspringResponse) {
         SearchspringResponse response = new SearchspringResponse();
         if (searchspringResponse != null && !searchspringResponse.contains("\"results\":\"")) {
             response = GSON.fromJson(searchspringResponse, SearchspringResponse.class);
@@ -65,6 +67,20 @@ public class Converter {
         appendXmlFeedDone(sb);
         appendCl(sb);
         sb.append("</xml>");
+        return sb.toString();
+    }
+
+    public String convertNextopiaSearchQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
+        nextopiaQueryUrl = nextopiaQueryUrl.replaceAll("\\^", "%5E");
+        URI uri = new URI(nextopiaQueryUrl);
+        Map<String, List<String>> queryMap = parser.parseQueryString(uri.getQuery());
+        StringBuilder sb = createSearchspringSearchUrl();
+        mapParameter(sb, queryMap, NX_KEYWORDS, SS_KEYWORDS);
+        mapParameter(sb, queryMap, NX_PAGE, SS_PAGE);
+        mapParameter(sb, queryMap, NX_RES_PER_PAGE, SS_RES_PER_PAGE);
+        mapRefinements(sb, queryMap);
+        mapSort(sb, queryMap);
+        logger.debug("Converted {} to {}", nextopiaQueryUrl, sb);
         return sb.toString();
     }
 
@@ -199,20 +215,6 @@ public class Converter {
         }
     }
 
-    public String convertNextopiaQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
-        nextopiaQueryUrl = nextopiaQueryUrl.replaceAll("\\^", "%5E");
-        URI uri = new URI(nextopiaQueryUrl);
-        Map<String, List<String>> queryMap = parser.parseQueryString(uri.getQuery());
-        StringBuilder sb = createSearchspringUrl();
-        mapParameter(sb, queryMap, NX_KEYWORDS, SS_KEYWORDS);
-        mapParameter(sb, queryMap, NX_PAGE, SS_PAGE);
-        mapParameter(sb, queryMap, NX_RES_PER_PAGE, SS_RES_PER_PAGE);
-        mapRefinements(sb, queryMap);
-        mapSort(sb, queryMap);
-        logger.debug("Converted {} to {}", nextopiaQueryUrl, sb);
-        return sb.toString();
-    }
-
     private void mapSort(StringBuilder sb, Map<String, List<String>> queryMap) {
         List<String> sortValues = queryMap.get(NX_SORT_BY_FIELD);
         if (sortValues != null) {
@@ -260,9 +262,13 @@ public class Converter {
         return leftOverParameters;
     }
 
-    private StringBuilder createSearchspringUrl() {
-        return new StringBuilder("https://").append(siteId).append(SS_DOMAIN).append(SS_PATH).append("?")
+    private StringBuilder createSearchspringSearchUrl() {
+        return new StringBuilder("https://").append(siteId).append(SS_DOMAIN).append(SS_SEARCH_PATH).append("?")
                 .append(SS_SITE_ID).append("=").append(siteId).append("&").append(SS_RESULTS_FORMAT).append("=json");
+    }
+    private StringBuilder createSearchspringAutocompleteUrl() {
+        return new StringBuilder("https://").append(siteId).append(SS_DOMAIN).append(SS_AUTOCOMPLETE_PATH).append("?")
+                .append(SS_SITE_ID).append("=").append(siteId);
     }
 
     private void mapParameter(StringBuilder sb, Map<String, List<String>> queryMap, String sourceParameter,
