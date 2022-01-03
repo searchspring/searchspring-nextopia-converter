@@ -35,53 +35,118 @@ public class Converter {
     private final String siteId;
     private final UrlParameterParser parser = new UrlParameterParser();
     private final Gson GSON = new Gson();
-    private final static String EMPTY_RESPONSE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><xml><pagination><total_products>0</total_products></pagination></xml>";
 
     public Converter(String siteId) {
         this.siteId = siteId;
     }
 
     public String convertSearchspringResponse(String searchspringResponse) {
-        if (searchspringResponse.contains("\"results\":\"")) {
-            return EMPTY_RESPONSE;
+        SearchspringResponse response = new SearchspringResponse();
+        if (searchspringResponse != null && !searchspringResponse.contains("\"results\":\"")) {
+            response = GSON.fromJson(searchspringResponse, SearchspringResponse.class);
         }
-        SearchspringResponse response = GSON.fromJson(searchspringResponse, SearchspringResponse.class);
+        if (response == null) {
+            response = new SearchspringResponse();
+        }
         StringBuilder sb = new StringBuilder("<?xml version='1.0' encoding='UTF-8'?><xml>");
+        appendQueryTime(sb, response);
         appendSuggestSpelling(sb, response);
+        appendCustomSynonyms(sb, response);
         appendPagination(sb, response);
+        appendSearchedInField(sb);
+        appendUserSearchDepth(sb);
+        appendCurrentlySortedBy(sb);
+        appendSortBys(sb);
+        appendNotices(sb);
+        appendMerchandizing(sb);
         appendRefinements(sb, response);
         appendResults(sb, response);
+        appendIndexHash(sb);
+        appendXmlFeedDone(sb);
+        appendCl(sb);
         sb.append("</xml>");
         return sb.toString();
     }
 
+    private void appendSortBys(StringBuilder sb) {
+        sb.append("<sort_bys/>");
+    }
+
+    private void appendCl(StringBuilder sb) {
+        sb.append("<cl>0</cl>");
+    }
+
+    private void appendXmlFeedDone(StringBuilder sb) {
+        sb.append("<xml_feed_done>1</xml_feed_done>");
+    }
+
+    private void appendIndexHash(StringBuilder sb) {
+        sb.append("<index_hash><![CDATA[ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ]]></index_hash>");
+    }
+
+    private void appendMerchandizing(StringBuilder sb) {
+        sb.append("<merchandizing/>");
+    }
+
+    private void appendUserSearchDepth(StringBuilder sb) {
+        sb.append("<user_search_depth/>");
+    }
+
+    private void appendCurrentlySortedBy(StringBuilder sb) {
+        sb.append("<currently_sorted_by/>");
+    }
+
+    private void appendSearchedInField(StringBuilder sb) {
+        sb.append("<searched_in_field/>");
+    }
+
+    private void appendNotices(StringBuilder sb) {
+        sb.append(
+                "<notices><related_added><![CDATA[ 0 ]]></related_added><sku_match><![CDATA[ 0 ]]></sku_match><or_switch><![CDATA[ 0 ]]></or_switch></notices>");
+    }
+
+    private void appendCustomSynonyms(StringBuilder sb, SearchspringResponse response) {
+        sb.append("<custom_synonyms/>");
+    }
+
+    private void appendQueryTime(StringBuilder sb, SearchspringResponse response) {
+        sb.append("<query_time>0</query_time>");
+    }
+
     private void appendSuggestSpelling(StringBuilder sb, SearchspringResponse response) {
+        sb.append("<suggested_spelling><![CDATA[");
         if (response.didYouMean != null && response.didYouMean.query != null) {
-            sb.append("<suggested_spelling><![CDATA[").append(response.didYouMean.query)
-                    .append("]]></suggested_spelling>");
+            sb.append(response.didYouMean.query);
+        } else {
+            sb.append(" ");
         }
+        sb.append("]]></suggested_spelling>");
     }
 
     private void appendPagination(StringBuilder sb, SearchspringResponse response) {
         sb.append("<pagination>");
-        sb.append("<total_products>").append(response.pagination.totalResults).append("</total_products>");
-        sb.append("<product_min>").append(response.pagination.begin).append("</product_min>");
-        sb.append("<product_max>").append(response.pagination.end).append("</product_max>");
-        sb.append("<current_page>").append(response.pagination.currentPage).append("</current_page>");
-        sb.append("<total_pages>").append(response.pagination.totalPages).append("</total_pages>");
-        sb.append("<prev_page>").append(response.pagination.currentPage > 1 ? "1" : "0").append("</prev_page>");
-        sb.append("<next_page>").append(response.pagination.currentPage < response.pagination.totalPages ? "1" : "0")
-                .append("</next_page>");
+        if (response.pagination != null) {
+            sb.append("<total_products>").append(response.pagination.totalResults).append("</total_products>");
+            sb.append("<product_min>").append(response.pagination.begin).append("</product_min>");
+            sb.append("<product_max>").append(response.pagination.end).append("</product_max>");
+            sb.append("<current_page>").append(response.pagination.currentPage).append("</current_page>");
+            sb.append("<total_pages>").append(response.pagination.totalPages).append("</total_pages>");
+            sb.append("<prev_page>").append(response.pagination.currentPage > 1 ? "1" : "0").append("</prev_page>");
+            sb.append("<next_page>")
+                    .append(response.pagination.currentPage < response.pagination.totalPages ? "1" : "0")
+                    .append("</next_page>");
+        } else {
+            sb.append("<total_products>0</total_products>");
+        }
         sb.append("</pagination>");
     }
 
     private void appendRefinements(StringBuilder sb, SearchspringResponse response) {
-        sb.append("<refinables>");
 
-        if (response.results != null && response.facets.length > 0) {
+        if (response.facets != null && response.facets.length > 0) {
+            sb.append("<refinables>");
 
             for (Map<String, Object> facet : response.facets) {
-                // // TODO replace with XML builder to avoid stringification issues
                 sb.append("<refinable>");
                 sb.append("<name>").append("<![CDATA[").append(String.valueOf(facet.get("field"))).append("]]>")
                         .append("</name>");
@@ -98,8 +163,10 @@ public class Converter {
                 sb.append("</values>");
                 sb.append("</refinable>");
             }
+            sb.append("</refinables>");
+        } else {
+            sb.append("<refinables/>");
         }
-        sb.append("</refinables>");
     }
 
     private String doubleToInteger(Object object) {
@@ -115,11 +182,10 @@ public class Converter {
     }
 
     private void appendResults(StringBuilder sb, SearchspringResponse response) {
-        sb.append("<results>");
         if (response.results != null && response.results.length > 0) {
+            sb.append("<results>");
             int counter = 0;
             for (Map<String, Object> result : response.results) {
-                // TODO replace with XML builder to avoid stringification issues
                 sb.append("<result>");
                 sb.append("<rank>").append(String.valueOf(counter)).append("</rank>");
                 sb.append("<Sku>").append("<![CDATA[").append(result.get("uid")).append("]]>").append("</Sku>");
@@ -127,8 +193,10 @@ public class Converter {
                 sb.append("</result>");
                 counter++;
             }
+            sb.append("</results>");
+        } else {
+            sb.append("<results/>");
         }
-        sb.append("</results>");
     }
 
     public String convertNextopiaQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
