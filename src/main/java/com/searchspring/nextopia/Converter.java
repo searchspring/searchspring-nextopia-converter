@@ -6,13 +6,17 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.google.gson.Gson;
-import com.searchspring.nextopia.model.SearchspringResponse;
+import com.searchspring.nextopia.model.Product;
+import com.searchspring.nextopia.model.SearchspringAutocompleteResponse;
+import com.searchspring.nextopia.model.SearchspringSearchResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +26,8 @@ public class Converter {
     private final String SS_DOMAIN = ".a.searchspring.io";
 
     private final String SS_SEARCH_PATH = "/api/search/search.json";
-    private final String SS_AUTOCOMPLETE_PATH = "/api/suggest/query";
+    private final String SS_AUTOCOMPLETE_PATH = "/api/suggest/legacy";
+    private final String SS_PRODUCT_COUNT = "productCount";
 
     private final String siteId;
     private final UrlParameterParser parser = new UrlParameterParser();
@@ -33,7 +38,6 @@ public class Converter {
     }
 
     public String convertNextopiaAutocompleteQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
-        nextopiaQueryUrl = nextopiaQueryUrl.replaceAll("\\^", "%5E");
         URI uri = new URI(nextopiaQueryUrl);
         Map<String, List<String>> queryMap = parser.parseQueryString(uri.getQuery());
         StringBuilder sb = createSearchspringAutocompleteUrl();
@@ -42,13 +46,54 @@ public class Converter {
         return sb.toString();
     }
 
-    public String convertSearchspringSearchResponse(String searchspringResponse) {
-        SearchspringResponse response = new SearchspringResponse();
-        if (searchspringResponse != null && !searchspringResponse.contains("\"results\":\"")) {
-            response = GSON.fromJson(searchspringResponse, SearchspringResponse.class);
+    public String convertSearchspringAutocompleteResponse(String callback, String searchspringResponse) {
+        SearchspringAutocompleteResponse response = new SearchspringAutocompleteResponse();
+        if (searchspringResponse != null) {
+            response = GSON.fromJson(searchspringResponse, SearchspringAutocompleteResponse.class);
         }
         if (response == null) {
-            response = new SearchspringResponse();
+            response = new SearchspringAutocompleteResponse();
+        }
+        StringBuilder sb = new StringBuilder(callback + "(");
+        appendTermsAndProducts(sb, response);
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public void appendTermsAndProducts(StringBuilder sb, SearchspringAutocompleteResponse response) {
+        Map<String, Object> container = new HashMap<>();
+        Map<String, Object> terms = new HashMap<>();
+        Map<String, Object> products = new HashMap<>();
+        container.put("terms", terms);
+        container.put("products", products);
+        terms.put("n", "Popular Searches");
+        if (response.terms != null) {
+            terms.put("r", response.terms);
+        }
+        products.put("n", "Product Matches");
+        if (response.products != null) {
+            List<Map<String, Object>> productList = new ArrayList<>();
+            for (Product product : response.products) {
+                Map<String, Object> productMap = new HashMap<>();
+                productMap.put("Sku", product.sku);
+                productMap.put("Url", product.url);
+                productMap.put("Name", product.name);
+                productMap.put("Price", product.price);
+                productMap.put("Image", product.thumbnailImageUrl);
+                productList.add(productMap);
+            }
+            products.put("r", productList);
+        }
+        sb.append(GSON.toJson(container));
+    }
+
+    public String convertSearchspringSearchResponse(String searchspringResponse) {
+        SearchspringSearchResponse response = new SearchspringSearchResponse();
+        if (searchspringResponse != null && !searchspringResponse.contains("\"results\":\"")) {
+            response = GSON.fromJson(searchspringResponse, SearchspringSearchResponse.class);
+        }
+        if (response == null) {
+            response = new SearchspringSearchResponse();
         }
         StringBuilder sb = new StringBuilder("<?xml version='1.0' encoding='UTF-8'?><xml>");
         appendQueryTime(sb, response);
@@ -121,15 +166,15 @@ public class Converter {
                 "<notices><related_added><![CDATA[ 0 ]]></related_added><sku_match><![CDATA[ 0 ]]></sku_match><or_switch><![CDATA[ 0 ]]></or_switch></notices>");
     }
 
-    private void appendCustomSynonyms(StringBuilder sb, SearchspringResponse response) {
+    private void appendCustomSynonyms(StringBuilder sb, SearchspringSearchResponse response) {
         sb.append("<custom_synonyms/>");
     }
 
-    private void appendQueryTime(StringBuilder sb, SearchspringResponse response) {
+    private void appendQueryTime(StringBuilder sb, SearchspringSearchResponse response) {
         sb.append("<query_time>0</query_time>");
     }
 
-    private void appendSuggestSpelling(StringBuilder sb, SearchspringResponse response) {
+    private void appendSuggestSpelling(StringBuilder sb, SearchspringSearchResponse response) {
         sb.append("<suggested_spelling><![CDATA[");
         if (response.didYouMean != null && response.didYouMean.query != null) {
             sb.append(response.didYouMean.query);
@@ -139,7 +184,7 @@ public class Converter {
         sb.append("]]></suggested_spelling>");
     }
 
-    private void appendPagination(StringBuilder sb, SearchspringResponse response) {
+    private void appendPagination(StringBuilder sb, SearchspringSearchResponse response) {
         sb.append("<pagination>");
         if (response.pagination != null) {
             sb.append("<total_products>").append(response.pagination.totalResults).append("</total_products>");
@@ -157,7 +202,7 @@ public class Converter {
         sb.append("</pagination>");
     }
 
-    private void appendRefinements(StringBuilder sb, SearchspringResponse response) {
+    private void appendRefinements(StringBuilder sb, SearchspringSearchResponse response) {
 
         if (response.facets != null && response.facets.length > 0) {
             sb.append("<refinables>");
@@ -197,7 +242,7 @@ public class Converter {
         }
     }
 
-    private void appendResults(StringBuilder sb, SearchspringResponse response) {
+    private void appendResults(StringBuilder sb, SearchspringSearchResponse response) {
         if (response.results != null && response.results.length > 0) {
             sb.append("<results>");
             int counter = 0;
@@ -266,9 +311,10 @@ public class Converter {
         return new StringBuilder("https://").append(siteId).append(SS_DOMAIN).append(SS_SEARCH_PATH).append("?")
                 .append(SS_SITE_ID).append("=").append(siteId).append("&").append(SS_RESULTS_FORMAT).append("=json");
     }
+
     private StringBuilder createSearchspringAutocompleteUrl() {
         return new StringBuilder("https://").append(siteId).append(SS_DOMAIN).append(SS_AUTOCOMPLETE_PATH).append("?")
-                .append(SS_SITE_ID).append("=").append(siteId);
+                .append(SS_SITE_ID).append("=").append(siteId).append("&").append(SS_PRODUCT_COUNT).append("=4");
     }
 
     private void mapParameter(StringBuilder sb, Map<String, List<String>> queryMap, String sourceParameter,

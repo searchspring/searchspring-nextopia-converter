@@ -29,9 +29,9 @@ public class ConverterTest {
         private static final String TEST_SEARCH_URL_PREFIX = "https://api.nextopiasoftware.com/return-results.php?xml=1&client_id=66141eeeacafe959b288238d65b176cb";
         private static final String TEST_AUTOCOMPLETE_URL_PREFIX = "https://vector.nextopiasoftware.com/return_autocomplete_jsonp_v3.php?callback=callback&cid=66141eeeacafe959b288238d65b176cb&_=000000000";
         private static final String EXPECTED_SEARCH_URL_PREFIX = "https://abcd12.a.searchspring.io/api/search/search.json?siteId="
-                        + SITE_ID;
-        private static final String EXPECTED_AUTOCOMPLETE_URL_PREFIX = "https://abcd12.a.searchspring.io/api/suggest/query?siteId="
-                        + SITE_ID;
+                        + SITE_ID + "&resultsFormat=json";
+        private static final String EXPECTED_AUTOCOMPLETE_URL_PREFIX = "https://abcd12.a.searchspring.io/api/suggest/legacy?siteId="
+                        + SITE_ID + "&productCount=4";
         private static final String PREFIX_SEARCH_EMPTY_BITS = "<query_time>0</query_time>";
         private static final String PREFIX_SEARCH_EMPTY_BITS2 = "<custom_synonyms/>";
         private static final String POSTFIX_SEARCH_EMPTY_BITS = "<searched_in_field/><user_search_depth/><currently_sorted_by/><sort_bys/><notices><related_added><![CDATA[ 0 ]]></related_added><sku_match><![CDATA[ 0 ]]></sku_match><or_switch><![CDATA[ 0 ]]></or_switch></notices><merchandizing/>";
@@ -46,6 +46,30 @@ public class ConverterTest {
         public void convertAutocompleteUrlTest() throws URISyntaxException {
                 String url = converter.convertNextopiaAutocompleteQueryUrl(TEST_AUTOCOMPLETE_URL_PREFIX + "&q=red");
                 assertEquals(EXPECTED_AUTOCOMPLETE_URL_PREFIX + "&" + SS_AUTOCOMPLETE_QUERY + "=red", url);
+        }
+
+        @Test
+        public void convertAutocompleteResponseTest() {
+                String seacrhspringJson = "{" + 
+                        "\"query\": \"red\"," + 
+                        "\"products\": [" + 
+                        "{" + 
+                        "\"thumbnailImageUrl\": \"https://s7d5.scene7.com/is/image/wasserstrom/6051647?defaultImage=noimage_wasserstrom&wid=220&hei=220\"," + 
+                        "\"price\": 4.8," + 
+                        "\"name\": \"<em>Red</em> Mop Head\"," + 
+                        "\"sku\": \"6051647\"," + 
+                        "\"url\": \"//www.wasserstrom.com/restaurant-supplies-equipment/Product_6051647\"" + 
+                        "}" + 
+                        "]," + 
+                        "\"terms\": [" + 
+                        "\"<em>red</em> bucket\"," + 
+                        "\"<em>red</em> wine glasses\"" + 
+                        "]" + 
+                        "}";
+                String nextopiaJsonp = converter.convertSearchspringAutocompleteResponse("callback", seacrhspringJson);
+                assertEquals("callback({\"terms\":{\"r\":[\"\\u003cem\\u003ered\\u003c/em\\u003e bucket\",\"\\u003cem\\u003ered\\u003c/em\\u003e wine glasses\"],\"n\":\"Popular Searches\"}" + 
+                ",\"products\":{\"r\":[{\"Price\":4.8,\"Sku\":\"6051647\",\"Image\":\"https://s7d5.scene7.com/is/image/wasserstrom/6051647?defaultImage\\u003dnoimage_wasserstrom\\u0026wid\\u003d220\\u0026hei\\u003d220\"," 
+                + "\"Url\":\"//www.wasserstrom.com/restaurant-supplies-equipment/Product_6051647\",\"Name\":\"\\u003cem\\u003eRed\\u003c/em\\u003e Mop Head\"}],\"n\":\"Product Matches\"}})", nextopiaJsonp);
         }
 
         @Test

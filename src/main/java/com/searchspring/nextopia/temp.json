@@ -1,0 +1,19 @@
+{
+  "query": "red",
+  "suggested": {
+    "text": "red",
+    "type": "exact",
+    "completed": [],
+    "source": "popular-query"
+  },
+  "alternatives": [
+    {
+      "popularity": 11,
+      "text": "red bucket"
+    },
+    {
+      "popularity": 11,
+      "text": "red wine glasses"
+    }
+  ]
+}
