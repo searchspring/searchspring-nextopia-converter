@@ -44,7 +44,7 @@ public class ComparisonTest {
         String line = null;
         try (BufferedReader br = new BufferedReader(new FileReader("tmp/urls.txt"))) {
             while ((line = br.readLine()) != null) {
-                converter.convertNextopiaQueryUrl(line);
+                converter.convertNextopiaSearchQueryUrl(line);
             }
         } catch (Exception e) {
             System.out.println("Failed on URL: " + line);
@@ -61,7 +61,7 @@ public class ComparisonTest {
         try (BufferedReader br = new BufferedReader(new FileReader("tmp/nextopiaUrls.txt"))) {
             while ((line = br.readLine()) != null) {
                 String nextopiaUrl = line;
-                String searchspringUrl = converter.convertNextopiaQueryUrl(nextopiaUrl);
+                String searchspringUrl = converter.convertNextopiaSearchQueryUrl(nextopiaUrl);
                 compareXml(nextopiaUrl, searchspringUrl);
                 break;
             }
@@ -75,7 +75,7 @@ public class ComparisonTest {
     private void compareXml(String nextopiaUrl, String searchspringUrl) throws Exception {
         String nextopiaXml = readStringFromURL(nextopiaUrl);
         String searchspringJson = readStringFromURL(searchspringUrl);
-        String searchspringXml = converter.convertSearchspringResponse(searchspringJson);
+        String searchspringXml = converter.convertSearchspringSearchResponse(searchspringJson);
         assertEquals(prettyPrint(nextopiaXml), prettyPrint(searchspringXml));
     }
 

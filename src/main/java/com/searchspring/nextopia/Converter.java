@@ -1,27 +1,22 @@
 package com.searchspring.nextopia;
 
-import static com.searchspring.nextopia.model.ParameterMappings.ALL_NEXTOPIA_PARAMETERS;
-import static com.searchspring.nextopia.model.ParameterMappings.NX_KEYWORDS;
-import static com.searchspring.nextopia.model.ParameterMappings.NX_PAGE;
-import static com.searchspring.nextopia.model.ParameterMappings.NX_RES_PER_PAGE;
-import static com.searchspring.nextopia.model.ParameterMappings.NX_SORT_BY_FIELD;
-import static com.searchspring.nextopia.model.ParameterMappings.SS_KEYWORDS;
-import static com.searchspring.nextopia.model.ParameterMappings.SS_PAGE;
-import static com.searchspring.nextopia.model.ParameterMappings.SS_RESULTS_FORMAT;
-import static com.searchspring.nextopia.model.ParameterMappings.SS_RES_PER_PAGE;
-import static com.searchspring.nextopia.model.ParameterMappings.SS_SITE_ID;
+import static com.searchspring.nextopia.model.ParameterMappings.*;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.google.gson.Gson;
-import com.searchspring.nextopia.model.SearchspringResponse;
+import com.searchspring.nextopia.model.Product;
+import com.searchspring.nextopia.model.SearchspringAutocompleteResponse;
+import com.searchspring.nextopia.model.SearchspringSearchResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +25,9 @@ public class Converter {
     final Logger logger = LoggerFactory.getLogger(Converter.class);
     private final String SS_DOMAIN = ".a.searchspring.io";
 
-    private final String SS_PATH = "/api/search/search.json";
+    private final String SS_SEARCH_PATH = "/api/search/search.json";
+    private final String SS_AUTOCOMPLETE_PATH = "/api/suggest/legacy";
+    private final String SS_PRODUCT_COUNT = "productCount";
 
     private final String siteId;
     private final UrlParameterParser parser = new UrlParameterParser();
@@ -40,13 +37,63 @@ public class Converter {
         this.siteId = siteId;
     }
 
-    public String convertSearchspringResponse(String searchspringResponse) {
-        SearchspringResponse response = new SearchspringResponse();
-        if (searchspringResponse != null && !searchspringResponse.contains("\"results\":\"")) {
-            response = GSON.fromJson(searchspringResponse, SearchspringResponse.class);
+    public String convertNextopiaAutocompleteQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
+        URI uri = new URI(nextopiaQueryUrl);
+        Map<String, List<String>> queryMap = parser.parseQueryString(uri.getQuery());
+        StringBuilder sb = createSearchspringAutocompleteUrl();
+        mapParameter(sb, queryMap, NX_AUTOCOMPLETE_QUERY, SS_AUTOCOMPLETE_QUERY);
+        logger.debug("Converted {} to {}", nextopiaQueryUrl, sb);
+        return sb.toString();
+    }
+
+    public String convertSearchspringAutocompleteResponse(String callback, String searchspringResponse) {
+        SearchspringAutocompleteResponse response = new SearchspringAutocompleteResponse();
+        if (searchspringResponse != null) {
+            response = GSON.fromJson(searchspringResponse, SearchspringAutocompleteResponse.class);
         }
         if (response == null) {
-            response = new SearchspringResponse();
+            response = new SearchspringAutocompleteResponse();
+        }
+        StringBuilder sb = new StringBuilder(callback + "(");
+        appendTermsAndProducts(sb, response);
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public void appendTermsAndProducts(StringBuilder sb, SearchspringAutocompleteResponse response) {
+        Map<String, Object> container = new HashMap<>();
+        Map<String, Object> terms = new HashMap<>();
+        Map<String, Object> products = new HashMap<>();
+        container.put("terms", terms);
+        container.put("products", products);
+        terms.put("n", "Popular Searches");
+        if (response.terms != null) {
+            terms.put("r", response.terms);
+        }
+        products.put("n", "Product Matches");
+        if (response.products != null) {
+            List<Map<String, Object>> productList = new ArrayList<>();
+            for (Product product : response.products) {
+                Map<String, Object> productMap = new HashMap<>();
+                productMap.put("Sku", product.sku);
+                productMap.put("Url", product.url);
+                productMap.put("Name", product.name);
+                productMap.put("Price", product.price);
+                productMap.put("Image", product.thumbnailImageUrl);
+                productList.add(productMap);
+            }
+            products.put("r", productList);
+        }
+        sb.append(GSON.toJson(container));
+    }
+
+    public String convertSearchspringSearchResponse(String searchspringResponse) {
+        SearchspringSearchResponse response = new SearchspringSearchResponse();
+        if (searchspringResponse != null && !searchspringResponse.contains("\"results\":\"")) {
+            response = GSON.fromJson(searchspringResponse, SearchspringSearchResponse.class);
+        }
+        if (response == null) {
+            response = new SearchspringSearchResponse();
         }
         StringBuilder sb = new StringBuilder("<?xml version='1.0' encoding='UTF-8'?><xml>");
         appendQueryTime(sb, response);
@@ -65,6 +112,20 @@ public class Converter {
         appendXmlFeedDone(sb);
         appendCl(sb);
         sb.append("</xml>");
+        return sb.toString();
+    }
+
+    public String convertNextopiaSearchQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
+        nextopiaQueryUrl = nextopiaQueryUrl.replaceAll("\\^", "%5E");
+        URI uri = new URI(nextopiaQueryUrl);
+        Map<String, List<String>> queryMap = parser.parseQueryString(uri.getQuery());
+        StringBuilder sb = createSearchspringSearchUrl();
+        mapParameter(sb, queryMap, NX_KEYWORDS, SS_KEYWORDS);
+        mapParameter(sb, queryMap, NX_PAGE, SS_PAGE);
+        mapParameter(sb, queryMap, NX_RES_PER_PAGE, SS_RES_PER_PAGE);
+        mapRefinements(sb, queryMap);
+        mapSort(sb, queryMap);
+        logger.debug("Converted {} to {}", nextopiaQueryUrl, sb);
         return sb.toString();
     }
 
@@ -105,15 +166,15 @@ public class Converter {
                 "<notices><related_added><![CDATA[ 0 ]]></related_added><sku_match><![CDATA[ 0 ]]></sku_match><or_switch><![CDATA[ 0 ]]></or_switch></notices>");
     }
 
-    private void appendCustomSynonyms(StringBuilder sb, SearchspringResponse response) {
+    private void appendCustomSynonyms(StringBuilder sb, SearchspringSearchResponse response) {
         sb.append("<custom_synonyms/>");
     }
 
-    private void appendQueryTime(StringBuilder sb, SearchspringResponse response) {
+    private void appendQueryTime(StringBuilder sb, SearchspringSearchResponse response) {
         sb.append("<query_time>0</query_time>");
     }
 
-    private void appendSuggestSpelling(StringBuilder sb, SearchspringResponse response) {
+    private void appendSuggestSpelling(StringBuilder sb, SearchspringSearchResponse response) {
         sb.append("<suggested_spelling><![CDATA[");
         if (response.didYouMean != null && response.didYouMean.query != null) {
             sb.append(response.didYouMean.query);
@@ -123,7 +184,7 @@ public class Converter {
         sb.append("]]></suggested_spelling>");
     }
 
-    private void appendPagination(StringBuilder sb, SearchspringResponse response) {
+    private void appendPagination(StringBuilder sb, SearchspringSearchResponse response) {
         sb.append("<pagination>");
         if (response.pagination != null) {
             sb.append("<total_products>").append(response.pagination.totalResults).append("</total_products>");
@@ -141,7 +202,7 @@ public class Converter {
         sb.append("</pagination>");
     }
 
-    private void appendRefinements(StringBuilder sb, SearchspringResponse response) {
+    private void appendRefinements(StringBuilder sb, SearchspringSearchResponse response) {
 
         if (response.facets != null && response.facets.length > 0) {
             sb.append("<refinables>");
@@ -181,7 +242,7 @@ public class Converter {
         }
     }
 
-    private void appendResults(StringBuilder sb, SearchspringResponse response) {
+    private void appendResults(StringBuilder sb, SearchspringSearchResponse response) {
         if (response.results != null && response.results.length > 0) {
             sb.append("<results>");
             int counter = 0;
@@ -197,20 +258,6 @@ public class Converter {
         } else {
             sb.append("<results/>");
         }
-    }
-
-    public String convertNextopiaQueryUrl(String nextopiaQueryUrl) throws URISyntaxException {
-        nextopiaQueryUrl = nextopiaQueryUrl.replaceAll("\\^", "%5E");
-        URI uri = new URI(nextopiaQueryUrl);
-        Map<String, List<String>> queryMap = parser.parseQueryString(uri.getQuery());
-        StringBuilder sb = createSearchspringUrl();
-        mapParameter(sb, queryMap, NX_KEYWORDS, SS_KEYWORDS);
-        mapParameter(sb, queryMap, NX_PAGE, SS_PAGE);
-        mapParameter(sb, queryMap, NX_RES_PER_PAGE, SS_RES_PER_PAGE);
-        mapRefinements(sb, queryMap);
-        mapSort(sb, queryMap);
-        logger.debug("Converted {} to {}", nextopiaQueryUrl, sb);
-        return sb.toString();
     }
 
     private void mapSort(StringBuilder sb, Map<String, List<String>> queryMap) {
@@ -260,9 +307,14 @@ public class Converter {
         return leftOverParameters;
     }
 
-    private StringBuilder createSearchspringUrl() {
-        return new StringBuilder("https://").append(siteId).append(SS_DOMAIN).append(SS_PATH).append("?")
+    private StringBuilder createSearchspringSearchUrl() {
+        return new StringBuilder("https://").append(siteId).append(SS_DOMAIN).append(SS_SEARCH_PATH).append("?")
                 .append(SS_SITE_ID).append("=").append(siteId).append("&").append(SS_RESULTS_FORMAT).append("=json");
+    }
+
+    private StringBuilder createSearchspringAutocompleteUrl() {
+        return new StringBuilder("https://").append(siteId).append(SS_DOMAIN).append(SS_AUTOCOMPLETE_PATH).append("?")
+                .append(SS_SITE_ID).append("=").append(siteId).append("&").append(SS_PRODUCT_COUNT).append("=4");
     }
 
     private void mapParameter(StringBuilder sb, Map<String, List<String>> queryMap, String sourceParameter,
