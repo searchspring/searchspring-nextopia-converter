@@ -3,7 +3,7 @@
 if [[ "$1" == "" ]]; then
     echo "usage: ./release.sh 0.0.1"
     echo "current releases: "
-    git fetch --tags origin 
+    git ls-remote --tags -q | grep -o 'refs/tags/[^/]*' | grep -o '[^/]*$' | sort -V
     exit 1
 fi
 
