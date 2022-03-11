@@ -43,7 +43,7 @@ public class ConverterTest {
         }
 
         @Test
-        public void convertAutocompleteUrlTest() throws URISyntaxException {
+        public void convertAutocompleteUrlTest() throws Exception {
                 String url = converter.convertNextopiaAutocompleteQueryUrl(TEST_AUTOCOMPLETE_URL_PREFIX + "&q=red");
                 assertEquals(EXPECTED_AUTOCOMPLETE_URL_PREFIX + "&" + SS_AUTOCOMPLETE_QUERY + "=red", url);
         }
