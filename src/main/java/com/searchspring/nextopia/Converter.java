@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.google.gson.Gson;
-import com.searchspring.nextopia.model.Product;
+import com.searchspring.nextopia.model.Alternative;
 import com.searchspring.nextopia.model.SearchspringAutocompleteResponse;
 import com.searchspring.nextopia.model.SearchspringSearchResponse;
 
@@ -26,7 +26,7 @@ public class Converter {
     private final String SS_DOMAIN = ".a.searchspring.io";
 
     private final String SS_SEARCH_PATH = "/api/search/search.json";
-    private final String SS_AUTOCOMPLETE_PATH = "/api/suggest/legacy";
+    private final String SS_AUTOCOMPLETE_PATH = "/api/suggest/query";
     private final String SS_PRODUCT_COUNT = "productCount";
 
     private final String siteId;
@@ -55,34 +55,25 @@ public class Converter {
             response = new SearchspringAutocompleteResponse();
         }
         StringBuilder sb = new StringBuilder(callback + "(");
-        appendTermsAndProducts(sb, response);
+        appendSuggestedAndAlternatives(sb, response);
         sb.append(")");
         return sb.toString();
     }
 
-    public void appendTermsAndProducts(StringBuilder sb, SearchspringAutocompleteResponse response) {
+    public void appendSuggestedAndAlternatives(StringBuilder sb, SearchspringAutocompleteResponse response) {
         Map<String, Object> container = new HashMap<>();
         Map<String, Object> terms = new HashMap<>();
-        Map<String, Object> products = new HashMap<>();
         container.put("terms", terms);
-        container.put("products", products);
         terms.put("n", "Popular Searches");
-        if (response.terms != null) {
-            terms.put("r", response.terms);
+        ArrayList<String> termList = new ArrayList<>();
+        terms.put("r", termList);
+        if (response.suggested != null) {
+            termList.add(response.suggested.text);
         }
-        products.put("n", "Product Matches");
-        if (response.products != null) {
-            List<Map<String, Object>> productList = new ArrayList<>();
-            for (Product product : response.products) {
-                Map<String, Object> productMap = new HashMap<>();
-                productMap.put("Sku", product.sku);
-                productMap.put("Url", product.url);
-                productMap.put("Name", product.name);
-                productMap.put("Price", product.price);
-                productMap.put("Image", product.thumbnailImageUrl);
-                productList.add(productMap);
+        if (response.alternatives != null) {
+            for (Alternative alternative : response.alternatives) {
+                termList.add(alternative.text);
             }
-            products.put("r", productList);
         }
         sb.append(GSON.toJson(container));
     }

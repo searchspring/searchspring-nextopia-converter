@@ -2,7 +2,7 @@ package com.searchspring.nextopia.model;
 
 public class SearchspringAutocompleteResponse {
 
-    public Product[] products;
-    public String[] terms;
+    public Suggested suggested;
+    public Alternative[] alternatives;
 
 }

@@ -30,7 +30,7 @@ public class ConverterTest {
         private static final String TEST_AUTOCOMPLETE_URL_PREFIX = "https://vector.nextopiasoftware.com/return_autocomplete_jsonp_v3.php?callback=callback&cid=66141eeeacafe959b288238d65b176cb&_=000000000";
         private static final String EXPECTED_SEARCH_URL_PREFIX = "https://abcd12.a.searchspring.io/api/search/search.json?siteId="
                         + SITE_ID + "&resultsFormat=json";
-        private static final String EXPECTED_AUTOCOMPLETE_URL_PREFIX = "https://abcd12.a.searchspring.io/api/suggest/legacy?siteId="
+        private static final String EXPECTED_AUTOCOMPLETE_URL_PREFIX = "https://abcd12.a.searchspring.io/api/suggest/query?siteId="
                         + SITE_ID + "&productCount=4";
         private static final String PREFIX_SEARCH_EMPTY_BITS = "<query_time>0</query_time>";
         private static final String PREFIX_SEARCH_EMPTY_BITS2 = "<custom_synonyms/>";
@@ -50,26 +50,31 @@ public class ConverterTest {
 
         @Test
         public void convertAutocompleteResponseTest() {
-                String seacrhspringJson = "{" + 
-                        "\"query\": \"red\"," + 
-                        "\"products\": [" + 
-                        "{" + 
-                        "\"thumbnailImageUrl\": \"https://s7d5.scene7.com/is/image/wasserstrom/6051647?defaultImage=noimage_wasserstrom&wid=220&hei=220\"," + 
-                        "\"price\": 4.8," + 
-                        "\"name\": \"<em>Red</em> Mop Head\"," + 
-                        "\"sku\": \"6051647\"," + 
-                        "\"url\": \"//www.wasserstrom.com/restaurant-supplies-equipment/Product_6051647\"" + 
-                        "}" + 
-                        "]," + 
-                        "\"terms\": [" + 
-                        "\"<em>red</em> bucket\"," + 
-                        "\"<em>red</em> wine glasses\"" + 
-                        "]" + 
-                        "}";
+                String seacrhspringJson = "{" +
+                "\"query\": \"red\"," +
+                "\"suggested\": {" +
+                "\"text\": \"red\"," +
+                "\"type\": \"exact\"," +
+                "\"completed\": []," +
+                "\"source\": \"popular-query\"" +
+                "}," +
+                "\"alternatives\": [" +
+                "{" +
+                "\"popularity\": 12," +
+                "\"text\": \"red bucket\"" +
+                "}," +
+                "{" +
+                "\"popularity\": 13," +
+                "\"text\": \"red wine glass\"" +
+                "}," +
+                "{" +
+                "\"popularity\": 17," +
+                "\"text\": \"red wine glasses\"" +
+                "}" +
+                "]" +
+                "}";
                 String nextopiaJsonp = converter.convertSearchspringAutocompleteResponse("callback", seacrhspringJson);
-                assertEquals("callback({\"terms\":{\"r\":[\"\\u003cem\\u003ered\\u003c/em\\u003e bucket\",\"\\u003cem\\u003ered\\u003c/em\\u003e wine glasses\"],\"n\":\"Popular Searches\"}" + 
-                ",\"products\":{\"r\":[{\"Price\":4.8,\"Sku\":\"6051647\",\"Image\":\"https://s7d5.scene7.com/is/image/wasserstrom/6051647?defaultImage\\u003dnoimage_wasserstrom\\u0026wid\\u003d220\\u0026hei\\u003d220\"," 
-                + "\"Url\":\"//www.wasserstrom.com/restaurant-supplies-equipment/Product_6051647\",\"Name\":\"\\u003cem\\u003eRed\\u003c/em\\u003e Mop Head\"}],\"n\":\"Product Matches\"}})", nextopiaJsonp);
+                assertEquals("callback({\"terms\":{\"r\":[\"red\",\"red bucket\",\"red wine glass\",\"red wine glasses\"],\"n\":\"Popular Searches\"}})", nextopiaJsonp);
         }
 
         @Test
@@ -101,7 +106,7 @@ public class ConverterTest {
         @Test
         public void convertSearchspringResponseResultsTest() {
                 String ssJson = "{\"pagination\": {\"totalResults\": 1981},"
-                                + "\"didYouMean\": {\"query\": \"span\",\"highlighted\": \"\\u003cem\\u003espan\\u003c/em\\u003e\"},"
+                                + "\"didYouMean\": {\"query\": \"span\",\"highlighted\": \"span\"},"
                                 + "\"results\": [ { \"uid\":\"1234\",\"brand\": \"Adidas\" } ],"
                                 + "\"facets\": [{\"field\":\"pattern_id7741124012283333869\", \"label\": \"Pattern\",\"type\": null,\"collapse\": 0,\"facet_active\": 0,"
                                 + "\"values\": [{\"active\": false,\"type\": \"value\",\"value\": \"Baguette\",\"label\": \"Baguette\",\"count\": 21}]"
